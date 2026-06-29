@@ -1,5 +1,5 @@
 // =============================================================================
-// Container Image Security Approval Report — reusable Typst template
+// Container Image Security Report — reusable Typst template
 // -----------------------------------------------------------------------------
 // One report == one immutable digest set. Instantiate by importing this file and
 // calling `security-report(..)` with a data dictionary. See `reports/` for a
@@ -22,6 +22,34 @@
   None:     rgb("#2e7d32"),
 )
 
+// --- Spacing scale (4 / 8 / 12 / 16) + one panel inset ----------------------
+#let s1  = 4pt
+#let s2  = 8pt
+#let s3  = 12pt
+#let s4  = 16pt
+#let pad = 9pt   // the single inset used by every panel
+
+// --- Pill primitive ---------------------------------------------------------
+// Two variants, one shape. SOLID is reserved for severity. TINT is for neutral
+// metadata, booleans, and status — so a green "YES" never rhymes with a red
+// "HIGH" on the same visual axis.
+#let pill-solid(label, color) = box(
+  fill: color, inset: (x: 6pt, y: 2pt), radius: 3pt,
+  text(fill: white, weight: "bold", size: 8.5pt, label),
+)
+#let pill-tint(label, color) = box(
+  fill: color.lighten(84%), inset: (x: 6pt, y: 2pt), radius: 3pt,
+  stroke: 0.5pt + color.lighten(40%),
+  text(fill: color.darken(8%), weight: "bold", size: 8pt, label),
+)
+
+// Severity badge — the only solid pill in the document.
+#let sev-badge(level, count: none) = {
+  let c = sev-colors.at(level, default: muted)
+  pill-solid(
+    if count == none { upper(level) } else { upper(level) + "  " + str(count) }, c)
+}
+
 // --- Small helpers ----------------------------------------------------------
 
 // Monospace digest that wraps cleanly instead of overflowing the page.
@@ -40,42 +68,23 @@
     text(font: "DejaVu Sans Mono", size: 8.5pt, fill: ink, out))
 }
 
-// Coloured severity pill.
-#let sev-badge(level, count: none) = {
-  let c = sev-colors.at(level, default: muted)
-  box(
-    fill: c, inset: (x: 6pt, y: 2pt), radius: 3pt,
-    text(fill: white, weight: "bold", size: 8.5pt,
-      if count == none { upper(level) } else { upper(level) + "  " + str(count) }),
-  )
-}
-
-// Yes/No/Verify chip used in tables.
-#let chip(label, kind) = {
-  let c = if kind == "good" { sev-colors.None }
-          else if kind == "bad" { sev-colors.High }
-          else { muted }
-  box(fill: c, inset: (x: 5pt, y: 1.5pt), radius: 3pt,
-    text(fill: white, weight: "bold", size: 8pt, label))
-}
-
 // Section heading with a rule under it.
 #let section(no, title) = {
-  v(4pt)
+  v(s2)
   block(width: 100%, breakable: false, {
-    grid(columns: (auto, 1fr), column-gutter: 8pt, align: bottom,
+    grid(columns: (auto, 1fr), column-gutter: s2, align: bottom,
       text(fill: accent, weight: "bold", size: 13pt)[#no],
       text(fill: ink, weight: "bold", size: 13pt)[#title],
     )
-    v(-2pt)
+    v(3pt)
     line(length: 100%, stroke: 1pt + accent)
   })
-  v(2pt)
+  v(s1)
 }
 
 // Key/value definition row.
 #let kv(k, v) = grid(
-  columns: (32%, 1fr), column-gutter: 10pt, row-gutter: 4pt,
+  columns: (32%, 1fr), column-gutter: 10pt, row-gutter: s1,
   text(fill: muted, weight: "medium")[#k], v,
 )
 
@@ -108,34 +117,36 @@
       )
     },
   )
-  set text(font: ("Libertinus Serif", "DejaVu Serif"), size: 10pt, fill: ink)
-  set par(justify: true, leading: 0.62em)
+  // Sans-serif, left-aligned body — the Linear-leaning foundation.
+  set text(font: ("Liberation Sans", "DejaVu Sans"), size: 10pt, fill: ink)
+  set par(justify: false, leading: 0.62em, spacing: 6pt)
+  show raw: set text(font: "DejaVu Sans Mono")
   show heading: set text(fill: accent)
-  set table(stroke: 0.5pt + hairline, inset: 6pt)
+  // Header fill via the `fill` function (a `set table.cell(fill: ..)` show rule
+  // silently no-ops on header cells, leaving white-on-white labels).
+  set table(
+    stroke: 0.5pt + hairline,
+    inset: 6pt,
+    fill: (x, y) => if y == 0 { accent },
+  )
   show table.cell.where(y: 0): set text(weight: "bold", fill: white, size: 8.5pt)
-  show table.cell.where(y: 0): set table.cell(fill: accent)
 
-  // --- Cover masthead -------------------------------------------------------
-  v(6pt)
+  // --- Cover masthead (left-anchored) ---------------------------------------
   block(width: 100%, breakable: false, {
-    line(length: 100%, stroke: 1.5pt + accent)
-    v(8pt)
-    align(center, {
-      text(size: 11pt, fill: muted, tracking: 2pt)[CONTAINER IMAGE SECURITY REPORT]
-      v(2pt)
-      text(size: 22pt, weight: "bold", fill: ink)[#data.product]
-      v(2pt)
-      text(size: 11pt, fill: muted)[Registry: #data.registry · Report #data.report-id · Issued #data.as-of.scan-date]
-    })
-    v(8pt)
-    line(length: 100%, stroke: 1.5pt + accent)
+    text(size: 9pt, fill: muted, tracking: 1.5pt)[CONTAINER IMAGE SECURITY REPORT]
+    v(3pt)
+    text(size: 24pt, weight: "bold", fill: ink)[#data.product]
+    v(2pt)
+    text(size: 10pt, fill: muted)[Registry #data.registry · Report #data.report-id · Issued #data.as-of.scan-date]
+    v(6pt)
+    line(length: 100%, stroke: 1pt + accent)
   })
-  v(8pt)
+  v(s2)
 
   // At-a-glance summary strip (informational — no verdict) -----------------
   let s = data.scan-summary
   let blocking = s.critical + s.high
-  block(width: 100%, fill: panel-bg, radius: 4pt, inset: 10pt, stroke: 0.5pt + hairline, {
+  block(width: 100%, fill: panel-bg, radius: 4pt, inset: pad, stroke: 0.5pt + hairline, {
     text(size: 9pt, fill: muted)[Critical + High findings: ]
     text(weight: "bold")[#blocking]
     text(size: 9pt, fill: muted)[ · Unfixed Critical/High: ]
@@ -146,19 +157,18 @@
     linebreak()
     text(size: 9pt, fill: muted)[This report records the scan results for the immutable digests in §1. Any rebuild produces a new digest and requires a new report. Informational only — it is not an approval or authorization to operate.]
   })
-  v(6pt)
 
   // === §1 Image identity ==================================================
   section[1.][Images Covered]
   [
-    This report describes *only* the exact images below, identified by immutable
-    SHA256 digest. Tags are mutable and are listed for convenience only — the
-    digest is the binding identifier.
+    This report describes #emph[only] the exact images below, identified by
+    immutable SHA256 digest. Tags are mutable and are listed for convenience
+    only — the digest is the binding identifier.
   ]
-  v(4pt)
+  v(s1)
   table(
-    columns: (auto, auto, 1fr, auto),
-    align: (x, y) => if y == 0 { center + horizon } else { left + horizon },
+    columns: (1.8cm, 3.2cm, 1fr, 1.4cm),
+    align: left + horizon,
     table.header[Variant][Tag][Image \@ Digest][Size],
     ..data.variants.map(vr => (
       [#vr.name], [#vr.tag],
@@ -166,11 +176,11 @@
       [#vr.size],
     )).flatten()
   )
-  v(2pt)
+  v(s1)
   text(size: 8.5pt, fill: muted)[
-    *full* — complete runtime image. *airmark* — minimized/distroless variant for
-    air-gapped & edge deployment. Each variant carries its own digest; both are
-    covered by this single report.
+    #strong[full] — complete runtime image. #strong[airmark] —
+    minimized/distroless variant for air-gapped & edge deployment. Each variant
+    carries its own digest; both are covered by this single report.
   ]
 
   // === §2 Vulnerability scan (the headline artifact) ======================
@@ -181,14 +191,14 @@
     sev-badge("Medium", count: s.medium),
     sev-badge("Low", count: s.low),
     sev-badge("Unknown", count: s.unknown),
-    chip("TOTAL " + str(s.critical + s.high + s.medium + s.low + s.unknown), "neutral"),
+    pill-tint("TOTAL " + str(s.critical + s.high + s.medium + s.low + s.unknown), muted),
   )
-  v(6pt)
+  v(s2)
   [Full enumeration of all Critical and High findings (the gate-relevant set):]
-  v(3pt)
+  v(s1)
   table(
-    columns: (auto, auto, 1fr, auto, auto, auto),
-    align: (x, y) => if y == 0 { center + horizon } else { left + horizon },
+    columns: (2.9cm, 1.7cm, 1fr, 2.2cm, 1.4cm, 2.3cm),
+    align: left + horizon,
     table.header[CVE][Severity][Component \@ Version][Fixed Version][Fixed?][Variant],
     ..data.cves.map(c => (
       link("https://nvd.nist.gov/vuln/detail/" + c.id,
@@ -196,11 +206,11 @@
       sev-badge(c.severity),
       [#raw(c.component) #h(2pt) #text(fill: muted)[#c.installed]],
       if c.fixed == "" { text(fill: muted)[—] } else { raw(c.fixed) },
-      if c.fixed-available { chip("YES", "good") } else { chip("NO", "bad") },
+      if c.fixed-available { pill-tint("YES", sev-colors.None) } else { pill-tint("NO", sev-colors.High) },
       [#c.variant],
     )).flatten()
   )
-  v(2pt)
+  v(s1)
   text(size: 8.5pt, fill: muted)[
     Severity as adjudicated by Harbor (Trivy). Only Critical/High shown; the full
     Medium/Low set is in the attached SBOM-linked scan JSON (§7).
@@ -209,27 +219,28 @@
   // === §3 Vendor statement + VEX ==========================================
   section[3.][Vendor Statement & VEX — Unfixed Critical / High]
   [
-    For every Critical/High finding *without an applied fix*, the statement below
-    is the vendor's position. These rows can be transcribed directly into a
+    For every Critical/High finding #emph[without an applied fix], the statement
+    below is the vendor's position. These rows can be transcribed directly into a
     POA&M. Justifications use OpenVEX status vocabulary.
   ]
-  v(4pt)
+  v(s1)
   if data.vex.len() == 0 {
-    block(fill: panel-bg, radius: 4pt, inset: 8pt, stroke: 0.5pt + hairline,
+    block(fill: panel-bg, radius: 4pt, inset: pad, stroke: 0.5pt + hairline,
       text(fill: sev-colors.None, weight: "bold")[
         ✓ No unfixed Critical/High findings. Nothing to carry into a POA&M.
       ])
   } else {
     for vx in data.vex {
+      let status-color = if vx.status == "not_affected" or vx.status == "fixed" { sev-colors.None }
+                         else if vx.status == "under_investigation" { sev-colors.Medium }
+                         else { sev-colors.High }
       block(width: 100%, breakable: false, fill: panel-bg, radius: 4pt,
-        inset: 9pt, stroke: 0.5pt + hairline, below: 7pt, {
+        inset: pad, stroke: 0.5pt + hairline, below: s2, {
         grid(columns: (auto, 1fr), column-gutter: 10pt, align: horizon,
           link("https://nvd.nist.gov/vuln/detail/" + vx.cve,
             text(weight: "bold", fill: accent, size: 11pt, vx.cve)),
           {
-            let kind = if vx.status == "not_affected" { "good" }
-                       else if vx.status == "fixed" { "good" } else { "neutral" }
-            chip(upper(vx.status), kind)
+            pill-tint(upper(vx.status), status-color)
             h(4pt)
             text(size: 9pt, fill: muted)[#vx.variant]
           },
@@ -253,7 +264,7 @@
   kv[Components inventoried][#b.components]
   kv[Attached as][#raw(b.attached-as)]
   kv[SBOM digest][#digest(b.digest)]
-  v(3pt)
+  v(s1)
   text(size: 9pt)[
     The SBOM is machine-readable and answers component-presence questions
     (e.g. "is log4j-core or openssl X present?") without re-scanning. It is
@@ -268,12 +279,11 @@
   kv[Workflow][#raw(p.workflow)]
   kv[Source][#link(p.repo-url, raw(p.repo)) \@ #raw(p.commit)]
   kv[Run][#link(p.run-url)[#raw(p.run-id)] · #p.predicate-type]
-  v(2pt)
   let sg = data.signature
   kv[Signed with][cosign (keyless / #sg.identity)]
   kv[Transparency log][#raw(sg.rekor)]
-  v(4pt)
-  block(fill: rgb("#0d1b2a"), radius: 4pt, inset: 9pt, width: 100%,
+  v(s1)
+  block(fill: rgb("#0d1b2a"), radius: 4pt, inset: pad, width: 100%,
     text(font: "DejaVu Sans Mono", size: 8pt, fill: rgb("#d7e3f0"))[
       #sg.verify-cmd
     ])
@@ -285,16 +295,18 @@
 
   // === §6 Hardening ========================================================
   section[6.][Image Hardening]
-  grid(columns: (1fr, 1fr), column-gutter: 12pt, row-gutter: 6pt,
-    ..data.hardening.map(hf => box(inset: (y: 2pt), {
-      chip("✓", "good"); h(5pt); text(hf)
+  grid(columns: (1fr, 1fr), column-gutter: s3, row-gutter: 5pt,
+    ..data.hardening.map(hf => box({
+      text(fill: sev-colors.None, weight: "bold")[✓]
+      h(6pt)
+      text(hf)
     }))
   )
 
   // === §7 As-of stamp ======================================================
   section[7.][Scan Metadata — As Of]
   let a = data.as-of
-  grid(columns: (1fr, 1fr), column-gutter: 16pt,
+  grid(columns: (1fr, 1fr), column-gutter: s4,
     {
       kv[Scan date][#text(weight: "bold")[#a.scan-date]]
       kv[Harbor][#a.harbor-version]
@@ -306,9 +318,9 @@
       kv[Contact][#link("mailto:" + data.prepared-by.email)[#data.prepared-by.email]]
     },
   )
-  v(6pt)
-  align(center, text(size: 8pt, fill: muted, style: "italic")[
+  v(s1)
+  text(size: 8pt, fill: muted, style: "italic")[
     A vulnerability scan is a point-in-time assertion. This report reflects the
     threat data available as of #a.scan-date and is valid only for the digests in §1.
-  ])
+  ]
 }
