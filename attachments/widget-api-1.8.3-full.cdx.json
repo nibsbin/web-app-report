@@ -1,0 +1,47 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:6f2c1b4e-0a3d-4f21-9c77-1a2b3c4d5e6f",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-06-28T06:20:11Z",
+    "tools": {
+      "components": [
+        { "type": "application", "name": "trivy", "version": "0.52.0" }
+      ]
+    },
+    "component": {
+      "type": "container",
+      "bom-ref": "pkg:oci/widget-api@sha256:3f1d9c0a8b7e6f5d4c3b2a1908f7e6d5c4b3a29180f7e6d5c4b3a29180f7e6d5",
+      "name": "harbor.example.mil/acme/widget-api",
+      "version": "1.8.3",
+      "purl": "pkg:oci/widget-api@sha256:3f1d9c0a8b7e6f5d4c3b2a1908f7e6d5c4b3a29180f7e6d5c4b3a29180f7e6d5"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:apk/wolfi/openssl@3.0.13-1",
+      "name": "openssl",
+      "version": "3.0.13-1",
+      "purl": "pkg:apk/wolfi/openssl@3.0.13-1?arch=x86_64",
+      "licenses": [ { "license": { "id": "Apache-2.0" } } ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:apk/wolfi/libexpat@2.5.0-1",
+      "name": "libexpat",
+      "version": "2.5.0-1",
+      "purl": "pkg:apk/wolfi/libexpat@2.5.0-1?arch=x86_64",
+      "licenses": [ { "license": { "id": "MIT" } } ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:golang/github.com/acme/widget-api@v1.8.3",
+      "name": "github.com/acme/widget-api",
+      "version": "v1.8.3",
+      "purl": "pkg:golang/github.com/acme/widget-api@v1.8.3"
+    }
+  ],
+  "_comment": "Illustrative excerpt for the spike. A real attestation enumerates all 214 components and is retrievable from Harbor as an in-toto predicate (cyclonedx) bound to the image digest above."
+}
