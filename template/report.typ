@@ -135,11 +135,7 @@
   // admin metadata is parked to the right so it isn't a third stacked line.
   block(width: 100%, breakable: false, {
     grid(columns: (1fr, auto), align: (left + bottom, right + bottom), column-gutter: s3,
-      {
-        text(size: 22pt, weight: "bold", fill: ink)[#data.product]
-        v(2pt)
-        text(size: 9.5pt, fill: muted)[Container image security report · #data.registry]
-      },
+      text(size: 22pt, weight: "bold", fill: ink)[#data.product],
       align(right, text(size: 9pt, fill: muted)[
         Report #data.report-id \
         Issued #data.as-of.scan-date
