@@ -41,8 +41,9 @@
   tag(status.replace("_", " "), c)
 }
 
-// One panel language for every grouped callout: same fill, hairline, radius, pad.
-#let panel(body) = block(width: 100%, fill: panel-bg, radius: 3pt,
+// One panel language for every grouped callout: hairline outline only — no fill,
+// barely-there radius. Quiet structure, not a coloured card.
+#let panel(body) = block(width: 100%, radius: 2pt,
   inset: pad, stroke: 0.5pt + hairline, body)
 
 // --- Small helpers ----------------------------------------------------------
@@ -64,7 +65,7 @@
 // One severity count, rendered as an aligned label-over-number stat.
 #let stat-cell(label, value, color) = stack(spacing: 3pt,
   text(size: 7.5pt, fill: muted, weight: "medium", tracking: 0.6pt, upper(label)),
-  text(size: 15pt, weight: "bold", fill: if value == 0 { muted } else { color })[#value],
+  text(size: 14pt, weight: "bold", fill: if value == 0 { muted } else { color })[#value],
 )
 
 // Section heading with a rule under it.
@@ -72,8 +73,8 @@
   v(s2)
   block(width: 100%, breakable: false, {
     grid(columns: (auto, 1fr), column-gutter: s2, align: bottom,
-      text(fill: accent, weight: "bold", size: 13pt)[#no],
-      text(fill: ink, weight: "bold", size: 13pt)[#title],
+      text(fill: accent, weight: "bold", size: 12pt)[#no],
+      text(fill: ink, weight: "bold", size: 12pt)[#title],
     )
     v(3pt)
     line(length: 100%, stroke: 0.75pt + accent)
@@ -133,7 +134,7 @@
   block(width: 100%, breakable: false, {
     text(size: 9pt, fill: muted, tracking: 1.5pt)[CONTAINER IMAGE SECURITY REPORT]
     v(3pt)
-    text(size: 24pt, weight: "bold", fill: ink)[#data.product]
+    text(size: 22pt, weight: "bold", fill: ink)[#data.product]
     v(2pt)
     text(size: 10pt, fill: muted)[Registry #data.registry · Report #data.report-id · Issued #data.as-of.scan-date]
     v(6pt)
