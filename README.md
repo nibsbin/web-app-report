@@ -1,9 +1,10 @@
-# Container Image Security Approval Report (Typst)
+# Container Image Security Report (Typst)
 
 A professional, cookie-cutter security report that gives an ISSO everything they
-need to approve a specific container image — and nothing they don't. **One report
-== one immutable digest set.** Rebuild the image, you get a new digest, you issue
-a new report.
+need to assess a specific container image — and nothing they don't. It is purely
+informational: it records facts about an image, it is not an approval or
+authorization to operate. **One report == one immutable digest set.** Rebuild the
+image, you get a new digest, you issue a new report.
 
 The report is data-driven: a reusable template (`template/report.typ`) plus a
 small per-image data file (`reports/<image>-<tag>.typ`). Fill in the dictionary,
@@ -17,7 +18,7 @@ acme/widget-api  →  reports/widget-api-1.8.3.typ  →  widget-api-1.8.3.pdf
 
 | § | Section | What the ISSO does with it |
 |---|---------|----------------------------|
-| 1 | **What is being approved** — image name + immutable SHA256 digest, per variant (full + airmark) | Confirms the exact artifact under review |
+| 1 | **Images covered** — image name + immutable SHA256 digest, per variant (full + airmark) | Confirms the exact artifact under review |
 | 2 | **Harbor vulnerability scan** — Critical/High counts + full Crit/High CVE table (CVE, severity, component, fixed version, fixed-or-not) | The headline artifact — the gate decision |
 | 3 | **Vendor statement & VEX** — for each *unfixed* Crit/High: not-affected (with justification) or remediation-with-date | Copies these rows straight into the POA&M |
 | 4 | **SBOM** — CycloneDX/SPDX, attached | Answers "is log4j / openssl X in here?" |
@@ -46,7 +47,6 @@ Copy `reports/widget-api-1.8.3.typ` and edit the dictionary passed to
 `security-report(..)`. The field contract:
 
 ```
-classification   "UNCLASSIFIED" | "CUI" | ...        (banner, top/bottom of every page)
 product           "acme/widget-api"                  registry repo path
 registry          "harbor.example.mil"
 report-id         "SR-2026-0042"
@@ -74,8 +74,8 @@ Notes:
   (e.g. `vulnerable_code_not_in_execute_path`) **or** `status: "affected"` /
   `"under_investigation"` with a `remediation-date`. If `vex` is empty the report
   prints a green "nothing for the POA&M" note.
-- The header/footer verdict flips to **CONDITIONAL** automatically when
-  `critical + high > 0`, otherwise **APPROVED**.
+- The summary strip reports the Critical+High and unfixed counts as plain facts;
+  the report makes no approve/deny judgement.
 - Keep the data file's `cves`/`vex` consistent with the actual Harbor export —
   this template renders facts, it does not generate them.
 

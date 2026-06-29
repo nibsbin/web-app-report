@@ -79,42 +79,33 @@
   text(fill: muted, weight: "medium")[#k], v,
 )
 
-// --- Classification banner --------------------------------------------------
-#let banner(class) = align(center,
-  text(fill: white, weight: "bold", size: 9pt, tracking: 1pt, upper(class)))
-
 // =============================================================================
 // Main template
 // =============================================================================
 #let security-report(data) = {
-  let class = data.at("classification", default: "UNCLASSIFIED")
-
-  set document(title: "Security Approval Report — " + data.product,
+  set document(title: "Security Report — " + data.product,
                author: data.at("prepared-by", default: ("name": "")).name)
   set page(
     paper: "us-letter",
-    margin: (x: 1.9cm, top: 2.4cm, bottom: 2.2cm),
+    margin: (x: 1.9cm, top: 2.2cm, bottom: 1.9cm),
     header: context {
       if counter(page).get().first() > 1 {
-        block(fill: accent, width: 100% + 3.8cm, inset: (x: 1.9cm, y: 3pt),
-          outset: (x: 1.9cm), banner(class))
-        v(2pt)
         grid(columns: (1fr, auto),
           text(size: 8pt, fill: muted)[#data.product — Report #data.report-id],
           text(size: 8pt, fill: muted, font: "DejaVu Sans Mono")[#data.variants.first().digest.slice(0, 19)…],
         )
+        v(1pt)
         line(length: 100%, stroke: 0.5pt + hairline)
       }
     },
     footer: context {
-      block(fill: accent, width: 100% + 3.8cm, inset: (x: 1.9cm, y: 3pt),
-        outset: (x: 1.9cm), {
-        grid(columns: (1fr, auto, 1fr),
-          text(size: 8pt, fill: white)[Report #data.report-id],
-          banner(class),
-          align(right, text(size: 8pt, fill: white)[Page #context counter(page).display() of #context counter(page).final().first()]),
-        )
-      })
+      line(length: 100%, stroke: 0.5pt + hairline)
+      v(1pt)
+      grid(columns: (1fr, auto, 1fr),
+        text(size: 8pt, fill: muted)[Report #data.report-id],
+        text(size: 8pt, fill: muted, style: "italic")[Informational — not an authorization to operate],
+        align(right, text(size: 8pt, fill: muted)[Page #context counter(page).display() of #context counter(page).final().first()]),
+      )
     },
   )
   set text(font: ("Libertinus Serif", "DejaVu Serif"), size: 10pt, fill: ink)
@@ -125,46 +116,44 @@
   show table.cell.where(y: 0): set table.cell(fill: accent)
 
   // --- Cover masthead -------------------------------------------------------
-  block(fill: accent, width: 100% + 3.8cm, outset: (x: 1.9cm), inset: (x: 1.9cm, y: 5pt),
-    banner(class))
-  v(10pt)
-  align(center, {
-    text(size: 11pt, fill: muted, tracking: 2pt)[CONTAINER IMAGE SECURITY APPROVAL]
-    v(2pt)
-    text(size: 22pt, weight: "bold", fill: ink)[#data.product]
-    v(2pt)
-    text(size: 11pt, fill: muted)[Registry: #data.registry · Report #data.report-id · Issued #data.as-of.scan-date]
+  v(6pt)
+  block(width: 100%, breakable: false, {
+    line(length: 100%, stroke: 1.5pt + accent)
+    v(8pt)
+    align(center, {
+      text(size: 11pt, fill: muted, tracking: 2pt)[CONTAINER IMAGE SECURITY REPORT]
+      v(2pt)
+      text(size: 22pt, weight: "bold", fill: ink)[#data.product]
+      v(2pt)
+      text(size: 11pt, fill: muted)[Registry: #data.registry · Report #data.report-id · Issued #data.as-of.scan-date]
+    })
+    v(8pt)
+    line(length: 100%, stroke: 1.5pt + accent)
   })
   v(8pt)
 
-  // Verdict + as-of strip --------------------------------------------------
+  // At-a-glance summary strip (informational — no verdict) -----------------
   let s = data.scan-summary
   let blocking = s.critical + s.high
-  let verdict = if blocking == 0 { ("APPROVED", sev-colors.None) }
-                else { ("CONDITIONAL — see VEX (§3)", sev-colors.Medium) }
   block(width: 100%, fill: panel-bg, radius: 4pt, inset: 10pt, stroke: 0.5pt + hairline, {
-    grid(columns: (auto, 1fr), column-gutter: 14pt, align: horizon,
-      box(fill: verdict.at(1), inset: (x: 10pt, y: 6pt), radius: 4pt,
-        text(fill: white, weight: "bold", size: 12pt, verdict.at(0))),
-      {
-        text(size: 9pt, fill: muted)[Blocking findings (Critical + High): ]
-        text(weight: "bold")[#blocking]
-        text(size: 9pt, fill: muted)[ · Scanned ]
-        text(weight: "bold")[#data.as-of.scan-date]
-        text(size: 9pt, fill: muted)[ · #data.as-of.scanner #data.as-of.trivy-version · DB #data.as-of.trivy-db]
-        linebreak()
-        text(size: 9pt, fill: muted)[This report is bound to the immutable digests in §1. Any rebuild produces a new digest and requires a new report.]
-      },
-    )
+    text(size: 9pt, fill: muted)[Critical + High findings: ]
+    text(weight: "bold")[#blocking]
+    text(size: 9pt, fill: muted)[ · Unfixed Critical/High: ]
+    text(weight: "bold")[#data.vex.len()]
+    text(size: 9pt, fill: muted)[ · Scanned ]
+    text(weight: "bold")[#data.as-of.scan-date]
+    text(size: 9pt, fill: muted)[ · #data.as-of.scanner #data.as-of.trivy-version · DB #data.as-of.trivy-db]
+    linebreak()
+    text(size: 9pt, fill: muted)[This report records the scan results for the immutable digests in §1. Any rebuild produces a new digest and requires a new report. Informational only — it is not an approval or authorization to operate.]
   })
   v(6pt)
 
-  // === §1 Approval subject ================================================
-  section[1.][What Is Being Approved]
+  // === §1 Image identity ==================================================
+  section[1.][Images Covered]
   [
-    Approval applies *only* to the exact images below, identified by immutable
+    This report describes *only* the exact images below, identified by immutable
     SHA256 digest. Tags are mutable and are listed for convenience only — the
-    digest is the binding artifact.
+    digest is the binding identifier.
   ]
   v(4pt)
   table(
@@ -221,7 +210,7 @@
   section[3.][Vendor Statement & VEX — Unfixed Critical / High]
   [
     For every Critical/High finding *without an applied fix*, the statement below
-    is the vendor's position. An ISSO may transcribe these rows directly into a
+    is the vendor's position. These rows can be transcribed directly into a
     POA&M. Justifications use OpenVEX status vocabulary.
   ]
   v(4pt)

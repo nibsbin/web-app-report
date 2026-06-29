@@ -3,7 +3,6 @@
 #import "../template/report.typ": security-report
 
 #show: _ => security-report((
-  classification: "UNCLASSIFIED",
   product: "acme/widget-api",
   registry: "harbor.example.mil",
   report-id: "SR-2026-0042",
