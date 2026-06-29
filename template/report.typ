@@ -197,17 +197,15 @@
   [Full enumeration of all Critical and High findings (the gate-relevant set):]
   v(s1)
   table(
-    columns: (2.9cm, 1.7cm, 1fr, 2.2cm, 1.4cm, 2.3cm),
+    columns: (2.9cm, 1.7cm, 1fr, 2.6cm),
     align: left + horizon,
-    table.header[CVE][Severity][Component \@ Version][Fixed Version][Fixed?][Variant],
+    table.header[CVE][Severity][Component \@ Version][Fixed Version],
     ..data.cves.map(c => (
       link("https://nvd.nist.gov/vuln/detail/" + c.id,
         text(fill: accent, c.id)),
       sev-badge(c.severity),
       [#raw(c.component) #h(2pt) #text(fill: muted)[#c.installed]],
       if c.fixed == "" { text(fill: muted)[—] } else { raw(c.fixed) },
-      if c.fixed-available { pill-tint("YES", sev-colors.None) } else { pill-tint("NO", sev-colors.High) },
-      [#c.variant],
     )).flatten()
   )
   v(s1)
