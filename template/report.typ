@@ -131,12 +131,20 @@
   show table.cell.where(y: 0): set text(weight: "bold", fill: white, size: 8.5pt)
 
   // --- Cover masthead (left-anchored) ---------------------------------------
+  // Title carries the weight; the document type is a quiet subtitle and the
+  // admin metadata is parked to the right so it isn't a third stacked line.
   block(width: 100%, breakable: false, {
-    text(size: 9pt, fill: muted, tracking: 1.5pt)[CONTAINER IMAGE SECURITY REPORT]
-    v(3pt)
-    text(size: 22pt, weight: "bold", fill: ink)[#data.product]
-    v(2pt)
-    text(size: 10pt, fill: muted)[Registry #data.registry · Report #data.report-id · Issued #data.as-of.scan-date]
+    grid(columns: (1fr, auto), align: (left + bottom, right + bottom), column-gutter: s3,
+      {
+        text(size: 22pt, weight: "bold", fill: ink)[#data.product]
+        v(2pt)
+        text(size: 9.5pt, fill: muted)[Container image security report · #data.registry]
+      },
+      align(right, text(size: 9pt, fill: muted)[
+        Report #data.report-id \
+        Issued #data.as-of.scan-date
+      ]),
+    )
     v(6pt)
     line(length: 100%, stroke: 0.75pt + accent)
   })
