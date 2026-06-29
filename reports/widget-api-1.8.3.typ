@@ -30,13 +30,11 @@
   cves: (
     (
       id: "CVE-2024-45491", severity: "High",
-      component: "libexpat", installed: "2.5.0-1",
-      fixed: "2.6.3-1", fixed-available: false, variant: "full",
+      component: "libexpat", installed: "2.5.0-1", fixed: "2.6.3-1",
     ),
     (
       id: "CVE-2024-6119", severity: "High",
-      component: "openssl", installed: "3.0.13-1",
-      fixed: "3.0.14-1", fixed-available: true, variant: "full, airmark",
+      component: "openssl", installed: "3.0.13-1", fixed: "3.0.14-1",
     ),
   ),
 

@@ -19,7 +19,7 @@ acme/widget-api  →  reports/widget-api-1.8.3.typ  →  widget-api-1.8.3.pdf
 | § | Section | What the ISSO does with it |
 |---|---------|----------------------------|
 | 1 | **Images covered** — image name + immutable SHA256 digest, per variant (full + airmark) | Confirms the exact artifact under review |
-| 2 | **Harbor vulnerability scan** — Critical/High counts + full Crit/High CVE table (CVE, severity, component, fixed version, fixed-or-not) | The headline artifact — the gate decision |
+| 2 | **Harbor vulnerability scan** — Critical/High counts + full Crit/High CVE table (CVE, severity, component, fixed version) | The headline artifact — the gate decision |
 | 3 | **Vendor statement & VEX** — for each *unfixed* Crit/High: not-affected (with justification) or remediation-with-date | Copies these rows straight into the POA&M |
 | 4 | **SBOM** — CycloneDX/SPDX, attached | Answers "is log4j / openssl X in here?" |
 | 5 | **Provenance + signature** — GitHub Actions build, cosign signature verifiable in Harbor | Proves the scanned image is the one you built |
@@ -55,7 +55,7 @@ prepared-by       (name, role, email)
 variants[]        (name, tag, size, digest)          §1 — one row per variant; digest is binding
 scan-summary      (critical, high, medium, low, unknown)   §2 — counts for the badges
 cves[]            (id, severity, component, installed,     §2 — every Crit/High finding
-                   fixed, fixed-available: bool, variant)
+                   fixed)                                  fixed: "" if no fix yet
 vex[]             (cve, variant, status, justification,    §3 — one per UNFIXED Crit/High
                    statement, remediation-date)            status ∈ openvex vocab
 sbom              (format, spec-version, components,        §4
