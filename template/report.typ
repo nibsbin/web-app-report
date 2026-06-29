@@ -215,11 +215,12 @@
   ]
 
   // === §3 Vendor statement + VEX ==========================================
-  section[3.][Vendor Statement & VEX — Unfixed Critical / High]
+  section[3.][VEX — Unfixed Critical / High]
   [
-    For every Critical/High finding #emph[without an applied fix], the statement
-    below is the vendor's position. These rows can be transcribed directly into a
-    POA&M. Justifications use OpenVEX status vocabulary.
+    For every Critical/High finding #emph[without an applied fix], the VEX
+    assertion below states whether it is exploitable and, where remediation is
+    planned, the target date. These rows can be transcribed directly into a
+    POA&M. Statuses use OpenVEX vocabulary.
   ]
   v(s1)
   if data.vex.len() == 0 {
@@ -247,7 +248,6 @@
         if vx.status == "not_affected" {
           kv[VEX justification][#vx.justification]
         }
-        kv[Statement][#vx.statement]
         if vx.at("remediation-date", default: "") != "" {
           kv[Remediation by][#text(weight: "bold")[#vx.remediation-date]]
         }

@@ -20,7 +20,7 @@ acme/widget-api  →  reports/widget-api-1.8.3.typ  →  widget-api-1.8.3.pdf
 |---|---------|----------------------------|
 | 1 | **Images covered** — image name + immutable SHA256 digest, per variant (full + airmark) | Confirms the exact artifact under review |
 | 2 | **Harbor vulnerability scan** — Critical/High counts + full Crit/High CVE table (CVE, severity, component, fixed version) | The headline artifact — the gate decision |
-| 3 | **Vendor statement & VEX** — for each *unfixed* Crit/High: not-affected (with justification) or remediation-with-date | Copies these rows straight into the POA&M |
+| 3 | **VEX** — for each *unfixed* Crit/High: not-affected (with justification) or remediation-with-date | Copies these rows straight into the POA&M |
 | 4 | **SBOM** — CycloneDX/SPDX, attached | Answers "is log4j / openssl X in here?" |
 | 5 | **Provenance + signature** — GitHub Actions build, cosign signature verifiable in Harbor | Proves the scanned image is the one you built |
 | 6 | **Image hardening** — non-root, no shell/pkg-manager, Chainguard base | Three checkmarks, not a STIG |
@@ -57,7 +57,7 @@ scan-summary      (critical, high, medium, low, unknown)   §2 — counts for th
 cves[]            (id, severity, component, installed,     §2 — every Crit/High finding
                    fixed)                                  fixed: "" if no fix yet
 vex[]             (cve, variant, status, justification,    §3 — one per UNFIXED Crit/High
-                   statement, remediation-date)            status ∈ openvex vocab
+                   remediation-date)                       status ∈ openvex vocab
 sbom              (format, spec-version, components,        §4
                    attached-as, digest)
 provenance        (builder, workflow, repo, repo-url,       §5

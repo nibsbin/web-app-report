@@ -38,17 +38,13 @@
     ),
   ),
 
-  // ---- §3 VEX / vendor statement for each UNFIXED Crit/High ---------------
+  // ---- §3 VEX for each UNFIXED Crit/High ----------------------------------
   // (Only CVE-2024-45491 is unfixed; the openssl one was patched in this build.)
   vex: (
     (
       cve: "CVE-2024-45491", variant: "full",
       status: "not_affected",
       justification: "vulnerable_code_not_in_execute_path",
-      statement: [libexpat is present only as a transitive dependency of the
-        man-page tooling, which is stripped at runtime. No code path in
-        widget-api invokes the affected XML_ParseBuffer overflow. A fix
-        (2.6.3-1) will still be absorbed on the next monthly base rebase.],
       remediation-date: "2026-07-31",
     ),
   ),
