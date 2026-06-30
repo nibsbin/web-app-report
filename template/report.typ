@@ -70,7 +70,7 @@
 
 // Section heading with a rule under it.
 #let section(no, title) = {
-  v(s2)
+  v(s3)
   block(width: 100%, breakable: false, {
     grid(columns: (auto, 1fr), column-gutter: s2, align: bottom,
       text(fill: accent, weight: "bold", size: 12pt)[#no],
@@ -150,23 +150,19 @@
   let s = data.scan-summary
   let blocking = s.critical + s.high
   panel({
-    text(size: 9pt, fill: muted)[Critical + High findings ]
     text(weight: "bold", fill: if blocking == 0 { ink } else { danger })[#blocking]
-    text(size: 9pt, fill: muted)[   ·   Unfixed Critical/High ]
+    text(size: 9pt, fill: muted)[ Critical / High]
+    text(size: 9pt, fill: muted)[ #h(s2) · #h(s2) ]
     text(weight: "bold", fill: if data.vex.len() == 0 { ink } else { danger })[#data.vex.len()]
-    text(size: 9pt, fill: muted)[   ·   Scanned ]
-    text(weight: "bold")[#data.as-of.scan-date]
-    text(size: 9pt, fill: muted)[ with #data.as-of.scanner #data.as-of.trivy-version, DB #data.as-of.trivy-db]
-    linebreak()
-    text(size: 9pt, fill: muted)[Records the scan results for the immutable digests in §1. Any rebuild produces a new digest and requires a new report.]
+    text(size: 9pt, fill: muted)[ unfixed]
+    text(size: 9pt, fill: muted)[ #h(s2) · #h(s2) Scanned #data.as-of.scan-date]
   })
 
   // === §1 Image identity ==================================================
   section[1.][Images Covered]
   [
-    This report describes #emph[only] the exact images below, identified by
-    immutable SHA256 digest. Tags are mutable and are listed for convenience
-    only — the digest is the binding identifier.
+    Each image is identified by its immutable SHA256 digest. Tags are mutable and
+    listed for convenience only.
   ]
   v(s1)
   table(
@@ -181,9 +177,8 @@
   )
   v(s1)
   text(size: 8.5pt, fill: muted)[
-    #strong[full] — complete runtime image. #strong[airmark] —
-    minimized/distroless variant for air-gapped & edge deployment. Each variant
-    carries its own digest; both are covered by this single report.
+    #strong[full] — complete runtime image. #strong[airmark] — minimized
+    distroless variant for air-gapped & edge use.
   ]
 
   // === §2 Vulnerability scan (the headline artifact) ======================
@@ -197,8 +192,6 @@
     stat-cell("Total", s.critical + s.high + s.medium + s.low + s.unknown, ink),
   )
   v(s2)
-  [Full enumeration of all Critical and High findings (the gate-relevant set):]
-  v(s1)
   table(
     columns: (2.9cm, 1.6cm, 1fr, 2.6cm),
     align: left + horizon,
@@ -213,17 +206,14 @@
   )
   v(s1)
   text(size: 8.5pt, fill: muted)[
-    Severity as adjudicated by Harbor (Trivy). Only Critical/High shown; the full
-    Medium/Low set is in the attached SBOM-linked scan JSON (§7).
+    Critical and High only; Medium and Low are in the attached scan JSON (§7).
   ]
 
   // === §3 Vendor statement + VEX ==========================================
   section[3.][VEX — Unfixed Critical / High]
   [
-    For every Critical/High finding #emph[without an applied fix], the VEX
-    assertion below states whether it is exploitable and, where remediation is
-    planned, the target date. These rows can be transcribed directly into a
-    POA&M. Statuses use OpenVEX vocabulary.
+    One assertion per unfixed Critical/High — not-affected with justification, or
+    a remediation date. POA&M-ready; statuses follow OpenVEX.
   ]
   v(s1)
   if data.vex.len() == 0 {
@@ -261,11 +251,9 @@
   kv[Attached as][#raw(b.attached-as)]
   kv[SBOM digest][#digest(b.digest)]
   v(s1)
-  text(size: 9pt)[
-    The SBOM is machine-readable and answers component-presence questions
-    (e.g. "is log4j-core or openssl X present?") without re-scanning. It is
-    attached to the image as an in-toto attestation and independently
-    retrievable from the registry.
+  text(size: 8.5pt, fill: muted)[
+    Answers component-presence questions (e.g. log4j, openssl) without
+    re-scanning. Attached as an in-toto attestation, retrievable from the registry.
   ]
 
   // === §5 Provenance + signature ==========================================
@@ -282,8 +270,7 @@
   panel(text(font: "DejaVu Sans Mono", size: 8pt, fill: ink)[#sg.verify-cmd])
   v(2pt)
   text(size: 8.5pt, fill: muted)[
-    Verifying the signature against the digest in §1 proves the scanned image is
-    the one this pipeline built — not a substitute.
+    Verify against the digest in §1 to confirm the scanned image is the one built here.
   ]
 
   // === §6 Hardening ========================================================
@@ -313,7 +300,6 @@
   )
   v(s1)
   text(size: 8pt, fill: muted, style: "italic")[
-    A vulnerability scan is a point-in-time assertion. This report reflects the
-    threat data available as of #a.scan-date and is valid only for the digests in §1.
+    Point-in-time scan; valid only for the digests in §1, as of #a.scan-date.
   ]
 }
