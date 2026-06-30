@@ -112,3 +112,26 @@ Notes:
   makes no approve/deny judgement.
 - Keep the document's `cves` consistent with the actual Harbor export — this
   quill renders facts, it does not generate them.
+
+## Consuming from another pipeline (e.g. GitLab)
+
+This repo is the renderer and the single source of truth for the report
+layout; a release pipeline that owns the *data* (digests, Harbor scan, SBOM)
+can render a report without vendoring anything. The renderer is pure Node +
+`@quillmark/wasm` (WebAssembly Typst — no Rust/Typst toolchain), so a stock
+`node:22` image suffices:
+
+```sh
+git clone --depth 1 --branch <pinned-ref> https://github.com/nibsbin/web-app-report.git renderer
+cd renderer && npm ci            # pulls @quillmark/wasm from npm
+# the consumer writes its own card-yaml doc (see the field contract above)
+node scripts/render.mjs /path/to/report.md -o report.pdf
+```
+
+`render.mjs` resolves the quill relative to its own location, so the input
+document may live anywhere; only the output path is yours to choose. **Pin
+the clone to a tag or SHA** so the report layout is reproducible across
+releases. The Airmark DoD deployment (`tonguetoquill/airmark`,
+`.gitlab/workflows/production.yml` → `production-report`) consumes the quill
+exactly this way — `scripts/gen-report-doc.mjs` there builds the card-yaml
+from Harbor scan JSON, then renders it with the invocation above.
