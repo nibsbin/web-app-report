@@ -183,7 +183,7 @@ main:
       type: object
       description: >-
         Build-source pointer for the digest in §1 (§4). Traceability only —
-        source repo, commit, and CI run, all known to the release pipeline.
+        source repo and CI run, both known to the release pipeline.
       ui:
         group: "§4 Provenance"
         order: 1
@@ -192,10 +192,6 @@ main:
           type: string
           description: Source repository URL.
           example: https://github.com/acme/widget-api
-        commit:
-          type: string
-          description: Source commit the build was cut from.
-          example: c0ffee1
         run_url:
           type: string
           description: CI run URL that produced the build.

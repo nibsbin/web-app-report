@@ -221,12 +221,11 @@
   // === §4 Build provenance ================================================
   section[4.][Build Provenance]
   let p = data.provenance
-  kv[Source][#link(p.repo_url)[#raw(p.repo_url)] \@ #raw(p.commit)]
+  kv[Source][#link(p.repo_url)[#raw(p.repo_url)]]
   kv[CI run][#link(p.run_url)[#raw(p.run_url)]]
   v(s1)
   text(size: 8.5pt, fill: muted)[
-    The build that produced the digest in §1 — traceable to its source commit
-    and CI run.
+    The build source for the digest in §1 — repository and CI run.
   ]
 
   // === §5 As-of stamp ======================================================

@@ -97,7 +97,7 @@ scan_summary      {critical, high, medium, low, unknown}   §2 — counts for th
 cves[]            {id, severity, component, installed,     §2 — every Crit/High finding
                    fixed}                                  fixed: "" if no fix yet
 sbom              {format, spec_version, digest, source}   §3 — Harbor SBOM accessory pointer
-provenance        {repo_url, commit, run_url}              §4 — build-source pointer
+provenance        {repo_url, run_url}                      §4 — build-source pointer
 as_of             {scan_date, harbor_version, scanner,       §5
                    trivy_version, trivy_db}
 ```
@@ -106,8 +106,10 @@ Notes:
 - **`sbom`** is a pointer, not an inventory — Harbor (>= 2.11) generates the
   CycloneDX SBOM server-side and stores it as an OCI accessory of the image; the
   report records its `digest` and where to fetch it (`additions/sbom`).
-- **`provenance`** is traceability only — the source repo, commit, and CI run
-  that produced the digest in §1. All three are known to the release pipeline.
+- **`provenance`** is traceability only — the source repo and CI run that
+  produced the digest in §1. Both are known to the release pipeline. (No source
+  commit: the report's consumers don't have source access, and the binding
+  artifact identity is the digest in §1, not a commit they can't resolve.)
 - The summary strip reports the Critical+High count as a plain fact; the report
   makes no approve/deny judgement.
 - Keep the document's `cves` consistent with the actual Harbor export — this
