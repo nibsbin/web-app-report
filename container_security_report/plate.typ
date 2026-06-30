@@ -210,7 +210,7 @@
   )
   v(s1)
   text(size: 8.5pt, fill: muted)[
-    Critical and High only; Medium and Low are in the attached scan JSON (§7).
+    Critical and High only; Medium and Low are in the attached scan JSON.
   ]
 
   // === §3 Vendor statement + VEX ==========================================
@@ -247,38 +247,19 @@
     }
   }
 
-  // === §4 SBOM =============================================================
-  section[4.][Software Bill of Materials (SBOM)]
-  let b = data.sbom
-  kv[Format][#b.format (#b.spec_version)]
-  kv[Components inventoried][#b.components]
-  kv[Attached as][#raw(b.attached_as)]
-  kv[SBOM digest][#digest(b.digest)]
-  v(s1)
-  text(size: 8.5pt, fill: muted)[
-    Answers component-presence questions (e.g. log4j, openssl) without
-    re-scanning. Attached as an in-toto attestation, retrievable from the registry.
-  ]
-
-  // === §5 Provenance + signature ==========================================
-  section[5.][Build Provenance & Signature]
+  // === §4 Build provenance ================================================
+  section[4.][Build Provenance]
   let p = data.provenance
-  kv[Built by][#p.builder]
-  kv[Workflow][#raw(p.workflow)]
-  kv[Source][#link(p.repo_url, raw(p.repo)) \@ #raw(p.commit)]
-  kv[Run][#link(p.run_url)[#raw(p.run_id)] · #p.predicate_type]
-  let sg = data.signature
-  kv[Signed with][cosign (keyless / #sg.identity)]
-  kv[Transparency log][#raw(sg.rekor)]
+  kv[Source][#link(p.repo_url)[#raw(p.repo_url)] \@ #raw(p.commit)]
+  kv[CI run][#link(p.run_url)[#raw(p.run_url)]]
   v(s1)
-  panel(text(font: "DejaVu Sans Mono", size: 8pt, fill: ink)[#sg.verify_cmd])
-  v(2pt)
   text(size: 8.5pt, fill: muted)[
-    Verify against the digest in §1 to confirm the scanned image is the one built here.
+    The build that produced the digest in §1 — traceable to its source commit
+    and CI run.
   ]
 
-  // === §6 Hardening ========================================================
-  section[6.][Image Hardening]
+  // === §5 Hardening ========================================================
+  section[5.][Image Hardening]
   grid(columns: (1fr, 1fr), column-gutter: s3, row-gutter: 5pt,
     ..data.hardening.map(hf => box({
       text(fill: positive, weight: "bold")[✓]
@@ -287,8 +268,8 @@
     }))
   )
 
-  // === §7 As-of stamp ======================================================
-  section[7.][Scan Metadata — As Of]
+  // === §6 As-of stamp ======================================================
+  section[6.][Scan Metadata — As Of]
   let a = data.as_of
   grid(columns: (1fr, 1fr), column-gutter: s4,
     {

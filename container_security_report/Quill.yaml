@@ -4,9 +4,9 @@ quill:
   version: "1.0.0"
   description: >-
     Container image security report, keyed to one immutable digest set. Records
-    Harbor vulnerability findings, VEX assertions, SBOM, build provenance,
-    signature, and hardening facts for a single image build. Purely
-    informational — it states facts, it is not an authorization to operate.
+    Harbor vulnerability findings, VEX assertions, build provenance, and
+    hardening facts for a single image build. Purely informational — it states
+    facts, it is not an authorization to operate.
   plate_file: plate.typ
 
 # The report is fully data-driven: there is no free-form prose body, every
@@ -41,7 +41,7 @@ main:
         order: 3
     prepared_by:
       type: object
-      description: Author of record for the report (§7 contact line).
+      description: Author of record for the report (§6 contact line).
       ui:
         group: Identity
         order: 4
@@ -185,55 +185,16 @@ main:
             description: Target remediation date, or "" if not applicable.
             example: "2026-07-31"
 
-    # ---- §4 SBOM -----------------------------------------------------------
-    sbom:
-      type: object
-      description: Software Bill of Materials metadata (§4).
-      ui:
-        group: "§4 SBOM"
-        order: 1
-      properties:
-        format:
-          type: string
-          description: SBOM format.
-          example: CycloneDX
-        spec_version:
-          type: string
-          description: SBOM spec version / encoding.
-          example: 1.6 JSON
-        components:
-          type: string
-          description: Component count summary.
-          example: 214 components (118 OS pkgs, 96 application)
-        attached_as:
-          type: string
-          description: How the SBOM is attached / retrievable.
-          example: in-toto attestation (predicate cyclonedx)
-        digest:
-          type: string
-          description: sha256 digest of the SBOM document.
-          example: "sha256:9988776655443322110099887766554433221100998877665544332211009988"
-
-    # ---- §5 Provenance + signature ----------------------------------------
+    # ---- §4 Provenance -----------------------------------------------------
     provenance:
       type: object
-      description: Build provenance attestation details (§5).
+      description: >-
+        Build-source pointer for the digest in §1 (§4). Traceability only —
+        source repo, commit, and CI run, all known to the release pipeline.
       ui:
-        group: "§5 Provenance & signature"
+        group: "§4 Provenance"
         order: 1
       properties:
-        builder:
-          type: string
-          description: Build platform / runner.
-          example: GitHub Actions (hosted runner, OIDC)
-        workflow:
-          type: string
-          description: Workflow reference that produced the build.
-          example: .github/workflows/release.yml@refs/tags/v1.8.3
-        repo:
-          type: string
-          description: Source repository (org/name).
-          example: acme/widget-api
         repo_url:
           type: string
           description: Source repository URL.
@@ -242,56 +203,29 @@ main:
           type: string
           description: Source commit the build was cut from.
           example: c0ffee1
-        run_id:
-          type: string
-          description: CI run identifier.
-          example: actions/runs/9876543210
         run_url:
           type: string
-          description: CI run URL.
+          description: CI run URL that produced the build.
           example: https://github.com/acme/widget-api/actions/runs/9876543210
-        predicate_type:
-          type: string
-          description: Provenance predicate type.
-          example: SLSA Provenance v1
-    signature:
-      type: object
-      description: Cosign signature / transparency-log details (§5).
-      ui:
-        group: "§5 Provenance & signature"
-        order: 2
-      properties:
-        identity:
-          type: string
-          description: Keyless signing identity.
-          example: GitHub OIDC, repo=acme/widget-api
-        rekor:
-          type: string
-          description: Rekor transparency-log reference.
-          example: https://rekor.sigstore.dev (index 148820391)
-        verify_cmd:
-          type: string
-          description: Copy-paste cosign verify command (multi-line allowed).
-          example: cosign verify --certificate-identity-regexp ... harbor.example.mil/acme/widget-api@sha256:...
 
-    # ---- §6 Hardening ------------------------------------------------------
+    # ---- §5 Hardening ------------------------------------------------------
     hardening:
       type: array
-      description: One checkmark per image-hardening fact (§6).
+      description: One checkmark per image-hardening fact (§5).
       ui:
-        group: "§6 Hardening"
+        group: "§5 Hardening"
         order: 1
       items:
         type: string
         description: A single hardening statement.
         example: Runs as non-root (UID 65532, no setuid binaries)
 
-    # ---- §7 As-of stamp ----------------------------------------------------
+    # ---- §6 As-of stamp ----------------------------------------------------
     as_of:
       type: object
-      description: Point-in-time scan metadata (§7). A scan without a date is worthless.
+      description: Point-in-time scan metadata (§6). A scan without a date is worthless.
       ui:
-        group: "§7 As-of"
+        group: "§6 As-of"
         order: 1
       properties:
         scan_date:

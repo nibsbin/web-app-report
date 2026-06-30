@@ -48,34 +48,13 @@ vex:
     justification: vulnerable_code_not_in_execute_path
     remediation_date: "2026-07-31"
 
-# §4 SBOM
-sbom:
-  format: CycloneDX
-  spec_version: 1.6 JSON
-  components: 214 components (118 OS pkgs, 96 application)
-  attached_as: in-toto attestation (predicate cyclonedx)
-  digest: "sha256:9988776655443322110099887766554433221100998877665544332211009988"
-
-# §5 Provenance + signature
+# §4 Build provenance — source pointer for the digest above
 provenance:
-  builder: GitHub Actions (hosted runner, OIDC)
-  workflow: .github/workflows/release.yml@refs/tags/v1.8.3
-  repo: acme/widget-api
   repo_url: https://github.com/acme/widget-api
   commit: c0ffee1
-  run_id: actions/runs/9876543210
   run_url: https://github.com/acme/widget-api/actions/runs/9876543210
-  predicate_type: SLSA Provenance v1
-signature:
-  identity: GitHub OIDC, repo=acme/widget-api
-  rekor: https://rekor.sigstore.dev (index 148820391)
-  verify_cmd: |-
-    cosign verify \
-      --certificate-identity-regexp '^https://github.com/acme/widget-api' \
-      --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-      harbor.example.mil/acme/widget-api@sha256:3f1d9c0a...e6d5
 
-# §6 Hardening facts
+# §5 Hardening facts
 hardening:
   - Runs as non-root (UID 65532, no setuid binaries)
   - No shell and no package manager in the image
@@ -84,7 +63,7 @@ hardening:
   - Minimal attack surface — airmark variant is 31 MB
   - No secrets or build tooling in final layers
 
-# §7 As-of stamp
+# §6 As-of stamp
 as_of:
   scan_date: "2026-06-28"
   harbor_version: Harbor v2.11.1
