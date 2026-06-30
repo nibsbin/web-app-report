@@ -132,6 +132,7 @@ node scripts/render.mjs /path/to/report.md -o report.pdf
 document may live anywhere; only the output path is yours to choose. **Pin
 the clone to a tag or SHA** so the report layout is reproducible across
 releases. The Airmark DoD deployment (`tonguetoquill/airmark`,
-`.gitlab/workflows/production.yml` → `production-report`) consumes the quill
-exactly this way — `scripts/gen-report-doc.mjs` there builds the card-yaml
-from Harbor scan JSON, then renders it with the invocation above.
+`.gitlab/workflows/utils.yml` → `security-report`) consumes the quill exactly
+this way — an on-demand job that reads the deployed image's digest, pulls
+Harbor's scan results, builds the card-yaml with `scripts/gen-report-doc.mjs`,
+then renders it with the invocation above.
