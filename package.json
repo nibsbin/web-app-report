@@ -1,0 +1,16 @@
+{
+  "name": "container-security-report",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Container image security report — a Quillmark quill (Typst backend), rendered with @quillmark/wasm.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "render": "node scripts/render.mjs"
+  },
+  "dependencies": {
+    "@quillmark/wasm": "^0.92.1"
+  }
+}

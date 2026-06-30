@@ -1,4 +1,4 @@
-# Container Image Security Report (Typst)
+# Container Image Security Report — a Quillmark quill (Typst backend)
 
 A professional, cookie-cutter security report that gives an ISSO everything they
 need to assess a specific container image — and nothing they don't. It is purely
@@ -6,12 +6,14 @@ informational: it records facts about an image, it is not an approval or
 authorization to operate. **One report == one immutable digest set.** Rebuild the
 image, you get a new digest, you issue a new report.
 
-The report is data-driven: a reusable template (`template/report.typ`) plus a
-small per-image data file (`reports/<image>-<tag>.typ`). Fill in the dictionary,
-compile, hand over the PDF.
+This template is packaged as a [Quillmark](https://quillmark.dev) **quill** with
+the **Typst** backend. The report is data-driven: a reusable quill
+(`container_security_report/`) plus a small per-image Markdown document that
+carries the data in its [card-yaml](https://quillmark.dev/reference/markdown-spec/)
+frontmatter. Fill in the frontmatter, render, hand over the PDF.
 
 ```
-acme/widget-api  →  reports/widget-api-1.8.3.typ  →  widget-api-1.8.3.pdf
+acme/widget-api  →  examples/widget-api-1.8.3.md  →  widget-api-1.8.3.pdf
 ```
 
 ## What's in the report (keyed to one digest)
@@ -26,65 +28,92 @@ acme/widget-api  →  reports/widget-api-1.8.3.typ  →  widget-api-1.8.3.pdf
 | 6 | **Image hardening** — non-root, no shell/pkg-manager, Chainguard base | Three checkmarks, not a STIG |
 | 7 | **As-of stamp** — Harbor + Trivy DB version + scan date | A scan without a date is worthless |
 
-## Build
+## Quill layout
 
-Requires [Typst](https://github.com/typst/typst) ≥ 0.12.
-
-```sh
-# from the repo root (so the template import resolves):
-typst compile --root . reports/widget-api-1.8.3.typ
-
-# live preview while editing data:
-typst watch --root . reports/widget-api-1.8.3.typ
+```
+container_security_report/          the quill bundle
+├── Quill.yaml                       manifest: backend + field schema (the data contract)
+└── plate.typ                        the reusable Typst layout (the "cookie cutter")
+examples/widget-api-1.8.3.md         a worked document with realistic data
+attachments/                         example SBOM the report points at (§4)
+scripts/render.mjs                   renderer — drives @quillmark/wasm
+package.json                         Node project: the @quillmark/wasm dependency
+.github/workflows/build-report.yml   CI: render examples/ to PDF artifacts
 ```
 
-CI builds every report under `reports/` on push — see
+- **`Quill.yaml`** declares `backend: typst`, points at `plate.typ`, and defines
+  the `main.fields` schema — every field, its type, and an `example`. This is the
+  authoritative contract for what a document must supply. Field keys are
+  **snake_case** (a Quillmark validation requirement).
+- **`plate.typ`** imports the document data from the Quillmark helper
+  (`#import "@local/quillmark-helper:0.1.0": data`) and renders all seven
+  sections from it. The report has no free-form prose body
+  (`main.body.enabled: false`); every section is rendered from structured fields.
+
+## Build
+
+Rendering goes through [`@quillmark/wasm`](https://www.npmjs.com/package/@quillmark/wasm)
+— the Quillmark engine + Typst backend compiled to WebAssembly, so no Rust or
+Typst toolchain is needed, only Node ≥ 22.
+
+```sh
+npm install            # once — pulls @quillmark/wasm
+
+npm run render                                   # render every examples/*.md -> out/
+node scripts/render.mjs examples/widget-api-1.8.3.md -o widget-api-1.8.3.pdf
+node scripts/render.mjs -f svg examples/widget-api-1.8.3.md   # pdf | svg | png | txt
+```
+
+`scripts/render.mjs` reads the quill bundle into an in-memory tree
+(`Quill.fromTree`), parses each document (`Document.fromMarkdown`), and renders
+it with the WASM `Engine`. CI runs the same `npm run render` on push — see
 `.github/workflows/build-report.yml`. The compiled PDF is uploaded as an artifact.
+
+### PR previews
+
+On a pull request, the `pr-preview` job rasterizes each report page to PNG
+(`node scripts/render.mjs -f png`), publishes the images to the `pr-previews`
+branch, and posts a sticky comment that embeds them inline — so a reviewer sees
+the rendered report on the PR without downloading anything. The comment is
+updated in place on every push, and links to the full PDF artifact. (Skipped on
+fork PRs, whose tokens can't push the branch or comment.)
 
 ## Authoring a new report
 
-Copy `reports/widget-api-1.8.3.typ` and edit the dictionary passed to
-`security-report(..)`. The field contract:
+Copy `examples/widget-api-1.8.3.md` and edit the card-yaml frontmatter. The first
+(and only) block is the root `$kind: main` card, bound to the quill with
+`$quill: container_security_report@1.0.0`. The field contract (see `Quill.yaml`
+for types and examples):
 
 ```
 product           "acme/widget-api"                  registry repo path
 registry          "harbor.example.mil"
-report-id         "SR-2026-0042"
-prepared-by       (name, role, email)
+report_id         "SR-2026-0042"
+prepared_by       {name, role, email}
 
-variants[]        (name, tag, size, digest)          §1 — one row per variant; digest is binding
-scan-summary      (critical, high, medium, low, unknown)   §2 — counts for the badges
-cves[]            (id, severity, component, installed,     §2 — every Crit/High finding
-                   fixed)                                  fixed: "" if no fix yet
-vex[]             (cve, variant, status, justification,    §3 — one per UNFIXED Crit/High
-                   remediation-date)                       status ∈ openvex vocab
-sbom              (format, spec-version, components,        §4
-                   attached-as, digest)
-provenance        (builder, workflow, repo, repo-url,       §5
-                   commit, run-id, run-url, predicate-type)
-signature         (identity, rekor, verify-cmd)             §5
+variants[]        {name, tag, size, digest}          §1 — one row per variant; digest is binding
+scan_summary      {critical, high, medium, low, unknown}   §2 — counts for the badges
+cves[]            {id, severity, component, installed,     §2 — every Crit/High finding
+                   fixed}                                  fixed: "" if no fix yet
+vex[]             {cve, variant, status, justification,    §3 — one per UNFIXED Crit/High
+                   remediation_date}                       status ∈ openvex vocab
+sbom              {format, spec_version, components,        §4
+                   attached_as, digest}
+provenance        {builder, workflow, repo, repo_url,       §5
+                   commit, run_id, run_url, predicate_type}
+signature         {identity, rekor, verify_cmd}             §5
 hardening[]       ["Runs as non-root …", …]                 §6 — one checkmark each
-as-of             (scan-date, harbor-version, scanner,       §7
-                   trivy-version, trivy-db)
+as_of             {scan_date, harbor_version, scanner,       §7
+                   trivy_version, trivy_db}
 ```
 
 Notes:
 - **`vex`** holds only the Crit/High findings *without an applied fix*. Use
-  `status: "not_affected"` with an OpenVEX `justification`
-  (e.g. `vulnerable_code_not_in_execute_path`) **or** `status: "affected"` /
-  `"under_investigation"` with a `remediation-date`. If `vex` is empty the report
+  `status: not_affected` with an OpenVEX `justification`
+  (e.g. `vulnerable_code_not_in_execute_path`) **or** `status: affected` /
+  `under_investigation` with a `remediation_date`. If `vex` is empty the report
   prints a green "nothing for the POA&M" note.
 - The summary strip reports the Critical+High and unfixed counts as plain facts;
   the report makes no approve/deny judgement.
-- Keep the data file's `cves`/`vex` consistent with the actual Harbor export —
-  this template renders facts, it does not generate them.
-
-## Repo layout
-
-```
-template/report.typ                 reusable layout + styling (the "cookie cutter")
-reports/widget-api-1.8.3.typ        worked example with realistic data
-reports/widget-api-1.8.3.pdf        compiled output (committed for review)
-attachments/                        example SBOM the report points at (§4)
-.github/workflows/build-report.yml  CI: compile reports to PDF artifacts
-```
+- Keep the document's `cves`/`vex` consistent with the actual Harbor export —
+  this quill renders facts, it does not generate them.

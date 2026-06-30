@@ -1,16 +1,23 @@
 name: build-report
 
-# Compile every Typst report under reports/ to a PDF and upload as an artifact.
+# Render every Quillmark document under examples/ with the container_security_report
+# quill (via @quillmark/wasm — no native toolchain needed) and upload the PDFs.
 on:
   push:
     paths:
-      - "reports/**"
-      - "template/**"
+      - "container_security_report/**"
+      - "examples/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/build-report.yml"
   pull_request:
     paths:
-      - "reports/**"
-      - "template/**"
+      - "container_security_report/**"
+      - "examples/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
   workflow_dispatch:
 
 permissions:
@@ -22,21 +29,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Typst
-        uses: typst-community/setup-typst@v4
+      - uses: actions/setup-node@v4
         with:
-          typst-version: "0.12.0"
+          node-version: "22"
+          cache: npm
 
-      - name: Compile reports
-        run: |
-          shopt -s nullglob
-          mkdir -p out
-          for f in reports/*.typ; do
-            echo "::group::$f"
-            typst compile --root . "$f" "out/$(basename "${f%.typ}").pdf"
-            echo "::endgroup::"
-          done
-          ls -la out
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Render reports
+        run: npm run render
 
       - name: Upload PDFs
         uses: actions/upload-artifact@v4
@@ -44,3 +46,109 @@ jobs:
           name: security-reports
           path: out/*.pdf
           if-no-files-found: error
+
+  # Surface the compiled report to the PR reviewer: rasterize each page to PNG,
+  # publish the images to the `pr-previews` branch (so they get embeddable raw
+  # URLs), and post/update a sticky PR comment showing them inline. Skipped on
+  # fork PRs, whose read-only token cannot push the branch or comment.
+  pr-preview:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Render PNG page previews
+        run: node scripts/render.mjs -f png
+
+      - name: Publish previews to pr-previews branch
+        id: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          BRANCH=pr-previews
+          tmp="$(mktemp -d)"
+          url="https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Clone the previews branch if it exists; otherwise start it as an orphan.
+          if git clone --depth 1 --branch "$BRANCH" "$url" "$tmp" 2>/dev/null; then
+            echo "reusing existing $BRANCH"
+          else
+            git clone --depth 1 "$url" "$tmp"
+            git -C "$tmp" checkout --orphan "$BRANCH"
+            git -C "$tmp" rm -rf . >/dev/null 2>&1 || true
+          fi
+          dest="$tmp/pr-$PR"
+          rm -rf "$dest"; mkdir -p "$dest"
+          cp out/*.png "$dest"/
+          git -C "$tmp" add -A
+          if git -C "$tmp" diff --cached --quiet; then
+            echo "no preview changes"
+          else
+            git -C "$tmp" commit -m "preview: PR #$PR @ ${GITHUB_SHA:0:7}"
+            git -C "$tmp" push origin "$BRANCH"
+          fi
+          {
+            echo "sha=$(git -C "$tmp" rev-parse HEAD)"
+            echo "pages=$(cd "$dest" && ls *.png | sort | paste -sd, -)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Comment on the PR with inline previews
+        uses: actions/github-script@v7
+        env:
+          PREVIEW_SHA: ${{ steps.publish.outputs.sha }}
+          PAGES: ${{ steps.publish.outputs.pages }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          script: |
+            const marker = '<!-- container-security-report-preview -->';
+            const { PREVIEW_SHA, PAGES, RUN_URL } = process.env;
+            const repo = `${context.repo.owner}/${context.repo.repo}`;
+            const pr = context.payload.pull_request.number;
+            const head = context.payload.pull_request.head.sha.slice(0, 7);
+            const files = PAGES ? PAGES.split(',').filter(Boolean) : [];
+            const imgs = files.map((f, i) =>
+              `**Page ${i + 1}**\n\n` +
+              `![page ${i + 1}](https://raw.githubusercontent.com/${repo}/${PREVIEW_SHA}/pr-${pr}/${f})`
+            ).join('\n\n');
+            const body = [
+              marker,
+              '## 📄 Container security report — preview',
+              '',
+              `Rendered from \`examples/\` at commit \`${head}\` via \`@quillmark/wasm\` (Typst backend).`,
+              '',
+              imgs || '_No pages were produced._',
+              '',
+              `**[⬇ Download the PDF](${RUN_URL})** — see the \`security-reports\` artifact on the run.`,
+              '',
+              '<sub>Preview images are published to the `pr-previews` branch and refreshed on every push to this PR.</sub>',
+            ].join('\n');
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: pr, per_page: 100,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner, repo: context.repo.repo, comment_id: existing.id, body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo, issue_number: pr, body,
+              });
+            }
