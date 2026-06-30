@@ -4,9 +4,9 @@ quill:
   version: "1.0.0"
   description: >-
     Container image security report, keyed to one immutable digest set. Records
-    Harbor vulnerability findings and build provenance for a single image build.
-    Purely informational — it states facts, it is not an authorization to
-    operate.
+    Harbor vulnerability findings, a Harbor-generated SBOM, and build provenance
+    for a single image build. Purely informational — it states facts, it is not
+    an authorization to operate.
   plate_file: plate.typ
 
 # The report is fully data-driven: there is no free-form prose body, every
@@ -41,7 +41,7 @@ main:
         order: 3
     prepared_by:
       type: object
-      description: Author of record for the report (§4 contact line).
+      description: Author of record for the report (§5 contact line).
       ui:
         group: Identity
         order: 4
@@ -149,14 +149,43 @@ main:
             description: Fixed version, or "" when no fix is available yet.
             example: 2.6.3-1
 
-    # ---- §3 Provenance -----------------------------------------------------
+    # ---- §3 SBOM (Harbor-generated) ----------------------------------------
+    sbom:
+      type: object
+      description: >-
+        Pointer to the SBOM Harbor generated server-side (§3). Harbor (>= 2.11)
+        produces the CycloneDX SBOM with its own scanner and stores it as an OCI
+        accessory of the image — this records the format and the accessory
+        digest, not a hand-counted inventory.
+      ui:
+        group: "§3 SBOM"
+        order: 1
+      properties:
+        format:
+          type: string
+          description: SBOM format Harbor emits.
+          example: CycloneDX
+        spec_version:
+          type: string
+          description: SBOM spec version / encoding.
+          example: 1.6 JSON
+        digest:
+          type: string
+          description: sha256 digest of the SBOM accessory in Harbor.
+          example: "sha256:9988776655443322110099887766554433221100998877665544332211009988"
+        source:
+          type: string
+          description: How / where the SBOM is retrievable.
+          example: Harbor accessory — additions/sbom
+
+    # ---- §4 Provenance -----------------------------------------------------
     provenance:
       type: object
       description: >-
-        Build-source pointer for the digest in §1 (§3). Traceability only —
+        Build-source pointer for the digest in §1 (§4). Traceability only —
         source repo, commit, and CI run, all known to the release pipeline.
       ui:
-        group: "§3 Provenance"
+        group: "§4 Provenance"
         order: 1
       properties:
         repo_url:
@@ -172,12 +201,12 @@ main:
           description: CI run URL that produced the build.
           example: https://github.com/acme/widget-api/actions/runs/9876543210
 
-    # ---- §4 As-of stamp ----------------------------------------------------
+    # ---- §5 As-of stamp ----------------------------------------------------
     as_of:
       type: object
-      description: Point-in-time scan metadata (§4). A scan without a date is worthless.
+      description: Point-in-time scan metadata (§5). A scan without a date is worthless.
       ui:
-        group: "§4 As-of"
+        group: "§5 As-of"
         order: 1
       properties:
         scan_date:

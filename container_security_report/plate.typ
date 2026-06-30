@@ -205,8 +205,21 @@
     Critical and High only; Medium and Low are in the attached scan JSON.
   ]
 
-  // === §3 Build provenance ================================================
-  section[3.][Build Provenance]
+  // === §3 SBOM (Harbor-generated) =========================================
+  section[3.][Software Bill of Materials (SBOM)]
+  let b = data.sbom
+  kv[Format][#b.format (#b.spec_version)]
+  kv[SBOM digest][#digest(b.digest)]
+  kv[Retrieve from][#raw(b.source)]
+  v(s1)
+  text(size: 8.5pt, fill: muted)[
+    Generated server-side by Harbor and stored as an OCI accessory of the image
+    in §1. Answers component-presence questions (e.g. log4j, openssl) without
+    re-scanning.
+  ]
+
+  // === §4 Build provenance ================================================
+  section[4.][Build Provenance]
   let p = data.provenance
   kv[Source][#link(p.repo_url)[#raw(p.repo_url)] \@ #raw(p.commit)]
   kv[CI run][#link(p.run_url)[#raw(p.run_url)]]
@@ -216,8 +229,8 @@
     and CI run.
   ]
 
-  // === §4 As-of stamp ======================================================
-  section[4.][Scan Metadata — As Of]
+  // === §5 As-of stamp ======================================================
+  section[5.][Scan Metadata — As Of]
   let a = data.as_of
   grid(columns: (1fr, 1fr), column-gutter: s4,
     {

@@ -8,7 +8,7 @@ image, you get a new digest, you issue a new report.
 
 Every section is captured directly from the build/scan pipeline — there are no
 hand-authored sections, so a report can be generated end-to-end from the
-release CI and the Harbor scan.
+release CI and the Harbor scan (Harbor generates the SBOM itself, server-side).
 
 This template is packaged as a [Quillmark](https://quillmark.dev) **quill** with
 the **Typst** backend. The report is data-driven: a reusable quill
@@ -26,8 +26,9 @@ acme/widget-api  →  examples/widget-api-1.8.3.md  →  widget-api-1.8.3.pdf
 |---|---------|----------------------------|---------------|
 | 1 | **Images covered** — image name + immutable SHA256 digest, per variant | Confirms the exact artifact under review | Harbor / build digest |
 | 2 | **Harbor vulnerability scan** — Critical/High counts + full Crit/High CVE table (CVE, severity, component, fixed version) | The headline artifact — the gate decision | Harbor / Trivy API |
-| 3 | **Build provenance** — source repo, commit, and CI run that produced the digest | Traces the scanned image back to its build | Release CI context |
-| 4 | **As-of stamp** — Harbor + Trivy DB version + scan date | A scan without a date is worthless | Harbor scan metadata |
+| 3 | **SBOM** — CycloneDX format + SBOM accessory digest, retrievable from Harbor | Answers "is log4j / openssl X in here?" | Harbor SBOM accessory |
+| 4 | **Build provenance** — source repo, commit, and CI run that produced the digest | Traces the scanned image back to its build | Release CI context |
+| 5 | **As-of stamp** — Harbor + Trivy DB version + scan date | A scan without a date is worthless | Harbor scan metadata |
 
 ## Quill layout
 
@@ -46,7 +47,7 @@ package.json                         Node project: the @quillmark/wasm dependenc
   authoritative contract for what a document must supply. Field keys are
   **snake_case** (a Quillmark validation requirement).
 - **`plate.typ`** imports the document data from the Quillmark helper
-  (`#import "@local/quillmark-helper:0.1.0": data`) and renders all four
+  (`#import "@local/quillmark-helper:0.1.0": data`) and renders all five
   sections from it. The report has no free-form prose body
   (`main.body.enabled: false`); every section is rendered from structured fields.
 
@@ -95,12 +96,16 @@ variants[]        {name, tag, size, digest}          §1 — one row per variant
 scan_summary      {critical, high, medium, low, unknown}   §2 — counts for the badges
 cves[]            {id, severity, component, installed,     §2 — every Crit/High finding
                    fixed}                                  fixed: "" if no fix yet
-provenance        {repo_url, commit, run_url}              §3 — build-source pointer
-as_of             {scan_date, harbor_version, scanner,       §4
+sbom              {format, spec_version, digest, source}   §3 — Harbor SBOM accessory pointer
+provenance        {repo_url, commit, run_url}              §4 — build-source pointer
+as_of             {scan_date, harbor_version, scanner,       §5
                    trivy_version, trivy_db}
 ```
 
 Notes:
+- **`sbom`** is a pointer, not an inventory — Harbor (>= 2.11) generates the
+  CycloneDX SBOM server-side and stores it as an OCI accessory of the image; the
+  report records its `digest` and where to fetch it (`additions/sbom`).
 - **`provenance`** is traceability only — the source repo, commit, and CI run
   that produced the digest in §1. All three are known to the release pipeline.
 - The summary strip reports the Critical+High count as a plain fact; the report

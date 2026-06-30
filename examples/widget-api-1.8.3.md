@@ -39,13 +39,20 @@ cves:
     installed: 3.0.13-1
     fixed: 3.0.14-1
 
-# §3 Build provenance — source pointer for the digest above
+# §3 SBOM — generated server-side by Harbor, recorded as a pointer
+sbom:
+  format: CycloneDX
+  spec_version: 1.6 JSON
+  digest: "sha256:9988776655443322110099887766554433221100998877665544332211009988"
+  source: Harbor accessory — additions/sbom
+
+# §4 Build provenance — source pointer for the digest above
 provenance:
   repo_url: https://github.com/acme/widget-api
   commit: c0ffee1
   run_url: https://github.com/acme/widget-api/actions/runs/9876543210
 
-# §4 As-of stamp
+# §5 As-of stamp
 as_of:
   scan_date: "2026-06-28"
   harbor_version: Harbor v2.11.1
