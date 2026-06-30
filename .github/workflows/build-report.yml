@@ -1,17 +1,23 @@
 name: build-report
 
 # Render every Quillmark document under examples/ with the container_security_report
-# quill and upload the PDFs as artifacts.
+# quill (via @quillmark/wasm — no native toolchain needed) and upload the PDFs.
 on:
   push:
     paths:
       - "container_security_report/**"
       - "examples/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/build-report.yml"
   pull_request:
     paths:
       - "container_security_report/**"
       - "examples/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
   workflow_dispatch:
 
 permissions:
@@ -23,29 +29,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache cargo bin
-        uses: actions/cache@v4
+      - uses: actions/setup-node@v4
         with:
-          path: ~/.cargo/bin
-          key: quillmark-cli-${{ runner.os }}
+          node-version: "22"
+          cache: npm
 
-      - name: Install quillmark CLI
-        run: |
-          if ! command -v quillmark >/dev/null; then
-            cargo install quillmark-cli
-          fi
-          quillmark --version
+      - name: Install dependencies
+        run: npm ci
 
       - name: Render reports
-        run: |
-          shopt -s nullglob
-          mkdir -p out
-          for f in examples/*.md; do
-            echo "::group::$f"
-            quillmark render ./container_security_report "$f" -o "out/$(basename "${f%.md}").pdf"
-            echo "::endgroup::"
-          done
-          ls -la out
+        run: npm run render
 
       - name: Upload PDFs
         uses: actions/upload-artifact@v4

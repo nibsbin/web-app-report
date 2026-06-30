@@ -3,8 +3,9 @@
 // -----------------------------------------------------------------------------
 // One report == one immutable digest set. The document data arrives from the
 // Quillmark helper package as the `data` dictionary (populated from the
-// markdown card-yaml frontmatter — see Quill.yaml for the field contract). This
-// plate renders that data; it does not generate facts.
+// markdown card-yaml frontmatter — see Quill.yaml for the field contract).
+// Quillmark requires snake_case field keys, so every data field below is
+// snake_case. This plate renders that data; it does not generate facts.
 // =============================================================================
 
 #import "@local/quillmark-helper:0.1.0": data
@@ -96,14 +97,14 @@
 // =============================================================================
 #let security-report(data) = {
   set document(title: "Security Report — " + data.product,
-               author: data.at("prepared-by", default: ("name": "")).name)
+               author: data.at("prepared_by", default: ("name": "")).name)
   set page(
     paper: "us-letter",
     margin: (x: 1.9cm, top: 2.2cm, bottom: 1.9cm),
     header: context {
       if counter(page).get().first() > 1 {
         grid(columns: (1fr, auto),
-          text(size: 8pt, fill: muted)[#data.product — Report #data.report-id],
+          text(size: 8pt, fill: muted)[#data.product — Report #data.report_id],
           text(size: 8pt, fill: muted, font: "DejaVu Sans Mono")[#data.variants.first().digest.slice(0, 19)…],
         )
         v(1pt)
@@ -114,7 +115,7 @@
       line(length: 100%, stroke: 0.5pt + hairline)
       v(1pt)
       grid(columns: (1fr, auto),
-        text(size: 8pt, fill: muted)[Report #data.report-id],
+        text(size: 8pt, fill: muted)[Report #data.report_id],
         align(right, text(size: 8pt, fill: muted)[Page #context counter(page).display() of #context counter(page).final().first()]),
       )
     },
@@ -140,8 +141,8 @@
     grid(columns: (1fr, auto), align: (left + bottom, right + bottom), column-gutter: s3,
       text(size: 22pt, weight: "bold", fill: ink)[#data.product],
       align(right, text(size: 9pt, fill: muted)[
-        Report #data.report-id \
-        Issued #data.as-of.scan-date
+        Report #data.report_id \
+        Issued #data.as_of.scan_date
       ]),
     )
     v(6pt)
@@ -150,7 +151,7 @@
   v(s2)
 
   // At-a-glance summary strip (informational — no verdict) -----------------
-  let s = data.scan-summary
+  let s = data.scan_summary
   let blocking = s.critical + s.high
   panel({
     text(weight: "bold", fill: if blocking == 0 { ink } else { danger })[#blocking]
@@ -158,7 +159,7 @@
     text(size: 9pt, fill: muted)[ #h(s2) · #h(s2) ]
     text(weight: "bold", fill: if data.vex.len() == 0 { ink } else { danger })[#data.vex.len()]
     text(size: 9pt, fill: muted)[ unfixed]
-    text(size: 9pt, fill: muted)[ #h(s2) · #h(s2) Scanned #data.as-of.scan-date]
+    text(size: 9pt, fill: muted)[ #h(s2) · #h(s2) Scanned #data.as_of.scan_date]
   })
 
   // === §1 Image identity ==================================================
@@ -239,8 +240,8 @@
         if vx.status == "not_affected" {
           kv[Justification][#vx.justification]
         }
-        if vx.at("remediation-date", default: "") != "" {
-          kv[Remediation by][#text(weight: "bold")[#vx.remediation-date]]
+        if vx.at("remediation_date", default: "") != "" {
+          kv[Remediation by][#text(weight: "bold")[#vx.remediation_date]]
         }
       }))
     }
@@ -249,9 +250,9 @@
   // === §4 SBOM =============================================================
   section[4.][Software Bill of Materials (SBOM)]
   let b = data.sbom
-  kv[Format][#b.format (#b.spec-version)]
+  kv[Format][#b.format (#b.spec_version)]
   kv[Components inventoried][#b.components]
-  kv[Attached as][#raw(b.attached-as)]
+  kv[Attached as][#raw(b.attached_as)]
   kv[SBOM digest][#digest(b.digest)]
   v(s1)
   text(size: 8.5pt, fill: muted)[
@@ -264,13 +265,13 @@
   let p = data.provenance
   kv[Built by][#p.builder]
   kv[Workflow][#raw(p.workflow)]
-  kv[Source][#link(p.repo-url, raw(p.repo)) \@ #raw(p.commit)]
-  kv[Run][#link(p.run-url)[#raw(p.run-id)] · #p.predicate-type]
+  kv[Source][#link(p.repo_url, raw(p.repo)) \@ #raw(p.commit)]
+  kv[Run][#link(p.run_url)[#raw(p.run_id)] · #p.predicate_type]
   let sg = data.signature
   kv[Signed with][cosign (keyless / #sg.identity)]
   kv[Transparency log][#raw(sg.rekor)]
   v(s1)
-  panel(text(font: "DejaVu Sans Mono", size: 8pt, fill: ink)[#sg.verify-cmd])
+  panel(text(font: "DejaVu Sans Mono", size: 8pt, fill: ink)[#sg.verify_cmd])
   v(2pt)
   text(size: 8.5pt, fill: muted)[
     Verify against the digest in §1 to confirm the scanned image is the one built here.
@@ -288,22 +289,22 @@
 
   // === §7 As-of stamp ======================================================
   section[7.][Scan Metadata — As Of]
-  let a = data.as-of
+  let a = data.as_of
   grid(columns: (1fr, 1fr), column-gutter: s4,
     {
-      kv[Scan date][#text(weight: "bold")[#a.scan-date]]
-      kv[Harbor][#a.harbor-version]
-      kv[Scanner][#a.scanner #a.trivy-version]
+      kv[Scan date][#text(weight: "bold")[#a.scan_date]]
+      kv[Harbor][#a.harbor_version]
+      kv[Scanner][#a.scanner #a.trivy_version]
     },
     {
-      kv[Trivy vuln DB][#a.trivy-db]
-      kv[Report prepared by][#data.prepared-by.name, #data.prepared-by.role]
-      kv[Contact][#link("mailto:" + data.prepared-by.email)[#data.prepared-by.email]]
+      kv[Trivy vuln DB][#a.trivy_db]
+      kv[Report prepared by][#data.prepared_by.name, #data.prepared_by.role]
+      kv[Contact][#link("mailto:" + data.prepared_by.email)[#data.prepared_by.email]]
     },
   )
   v(s1)
   text(size: 8pt, fill: muted, style: "italic")[
-    Point-in-time scan; valid only for the digests in §1, as of #a.scan-date.
+    Point-in-time scan; valid only for the digests in §1, as of #a.scan_date.
   ]
 }
 

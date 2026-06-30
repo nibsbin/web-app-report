@@ -36,12 +36,15 @@ container_security_report/          the quill bundle
 └── plate.typ                        the reusable Typst layout (the "cookie cutter")
 examples/widget-api-1.8.3.md         a worked document with realistic data
 attachments/                         example SBOM the report points at (§4)
+scripts/render.mjs                   renderer — drives @quillmark/wasm
+package.json                         Node project: the @quillmark/wasm dependency
 .github/workflows/build-report.yml   CI: render examples/ to PDF artifacts
 ```
 
 - **`Quill.yaml`** declares `backend: typst`, points at `plate.typ`, and defines
   the `main.fields` schema — every field, its type, and an `example`. This is the
-  authoritative contract for what a document must supply.
+  authoritative contract for what a document must supply. Field keys are
+  **snake_case** (a Quillmark validation requirement).
 - **`plate.typ`** imports the document data from the Quillmark helper
   (`#import "@local/quillmark-helper:0.1.0": data`) and renders all seven
   sections from it. The report has no free-form prose body
@@ -49,16 +52,21 @@ attachments/                         example SBOM the report points at (§4)
 
 ## Build
 
-Render with the [Quillmark CLI](https://quillmark.dev/cli/reference/):
+Rendering goes through [`@quillmark/wasm`](https://www.npmjs.com/package/@quillmark/wasm)
+— the Quillmark engine + Typst backend compiled to WebAssembly, so no Rust or
+Typst toolchain is needed, only Node ≥ 22.
 
 ```sh
-cargo install quillmark-cli   # once
+npm install            # once — pulls @quillmark/wasm
 
-# from the repo root:
-quillmark render ./container_security_report examples/widget-api-1.8.3.md -o widget-api-1.8.3.pdf
+npm run render                                   # render every examples/*.md -> out/
+node scripts/render.mjs examples/widget-api-1.8.3.md -o widget-api-1.8.3.pdf
+node scripts/render.mjs -f svg examples/widget-api-1.8.3.md   # pdf | svg | png | txt
 ```
 
-CI renders every document under `examples/` on push — see
+`scripts/render.mjs` reads the quill bundle into an in-memory tree
+(`Quill.fromTree`), parses each document (`Document.fromMarkdown`), and renders
+it with the WASM `Engine`. CI runs the same `npm run render` on push — see
 `.github/workflows/build-report.yml`. The compiled PDF is uploaded as an artifact.
 
 ## Authoring a new report
@@ -71,30 +79,30 @@ for types and examples):
 ```
 product           "acme/widget-api"                  registry repo path
 registry          "harbor.example.mil"
-report-id         "SR-2026-0042"
-prepared-by       {name, role, email}
+report_id         "SR-2026-0042"
+prepared_by       {name, role, email}
 
 variants[]        {name, tag, size, digest}          §1 — one row per variant; digest is binding
-scan-summary      {critical, high, medium, low, unknown}   §2 — counts for the badges
+scan_summary      {critical, high, medium, low, unknown}   §2 — counts for the badges
 cves[]            {id, severity, component, installed,     §2 — every Crit/High finding
                    fixed}                                  fixed: "" if no fix yet
 vex[]             {cve, variant, status, justification,    §3 — one per UNFIXED Crit/High
-                   remediation-date}                       status ∈ openvex vocab
-sbom              {format, spec-version, components,        §4
-                   attached-as, digest}
-provenance        {builder, workflow, repo, repo-url,       §5
-                   commit, run-id, run-url, predicate-type}
-signature         {identity, rekor, verify-cmd}             §5
+                   remediation_date}                       status ∈ openvex vocab
+sbom              {format, spec_version, components,        §4
+                   attached_as, digest}
+provenance        {builder, workflow, repo, repo_url,       §5
+                   commit, run_id, run_url, predicate_type}
+signature         {identity, rekor, verify_cmd}             §5
 hardening[]       ["Runs as non-root …", …]                 §6 — one checkmark each
-as-of             {scan-date, harbor-version, scanner,       §7
-                   trivy-version, trivy-db}
+as_of             {scan_date, harbor_version, scanner,       §7
+                   trivy_version, trivy_db}
 ```
 
 Notes:
 - **`vex`** holds only the Crit/High findings *without an applied fix*. Use
   `status: not_affected` with an OpenVEX `justification`
   (e.g. `vulnerable_code_not_in_execute_path`) **or** `status: affected` /
-  `under_investigation` with a `remediation-date`. If `vex` is empty the report
+  `under_investigation` with a `remediation_date`. If `vex` is empty the report
   prints a green "nothing for the POA&M" note.
 - The summary strip reports the Critical+High and unfixed counts as plain facts;
   the report makes no approve/deny judgement.

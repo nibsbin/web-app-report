@@ -10,7 +10,8 @@ quill:
   plate_file: plate.typ
 
 # The report is fully data-driven: there is no free-form prose body, every
-# section is rendered from the structured fields below.
+# section is rendered from the structured fields below. Quillmark requires
+# snake_case field keys, so every field name here is snake_case.
 main:
   body:
     enabled: false
@@ -31,14 +32,14 @@ main:
       ui:
         group: Identity
         order: 2
-    report-id:
+    report_id:
       type: string
       description: Human-facing identifier for this report.
       example: SR-2026-0042
       ui:
         group: Identity
         order: 3
-    prepared-by:
+    prepared_by:
       type: object
       description: Author of record for the report (§7 contact line).
       ui:
@@ -88,7 +89,7 @@ main:
             example: "sha256:3f1d9c0a8b7e6f5d4c3b2a1908f7e6d5c4b3a29180f7e6d5c4b3a29180f7e6d5"
 
     # ---- §2 Scan -----------------------------------------------------------
-    scan-summary:
+    scan_summary:
       type: object
       description: Harbor severity counts for the badge strip (§2).
       ui:
@@ -154,7 +155,7 @@ main:
       description: >-
         One assertion per UNFIXED Critical/High finding. Either not_affected
         with an OpenVEX justification, or affected/under_investigation with a
-        remediation-date. An empty list renders the green "nothing for the
+        remediation_date. An empty list renders the green "nothing for the
         POA&M" note.
       ui:
         group: "§3 VEX"
@@ -179,7 +180,7 @@ main:
             type: string
             description: OpenVEX justification (required when status is not_affected).
             example: vulnerable_code_not_in_execute_path
-          remediation-date:
+          remediation_date:
             type: string
             description: Target remediation date, or "" if not applicable.
             example: "2026-07-31"
@@ -196,7 +197,7 @@ main:
           type: string
           description: SBOM format.
           example: CycloneDX
-        spec-version:
+        spec_version:
           type: string
           description: SBOM spec version / encoding.
           example: 1.6 JSON
@@ -204,7 +205,7 @@ main:
           type: string
           description: Component count summary.
           example: 214 components (118 OS pkgs, 96 application)
-        attached-as:
+        attached_as:
           type: string
           description: How the SBOM is attached / retrievable.
           example: in-toto attestation (predicate cyclonedx)
@@ -233,7 +234,7 @@ main:
           type: string
           description: Source repository (org/name).
           example: acme/widget-api
-        repo-url:
+        repo_url:
           type: string
           description: Source repository URL.
           example: https://github.com/acme/widget-api
@@ -241,15 +242,15 @@ main:
           type: string
           description: Source commit the build was cut from.
           example: c0ffee1
-        run-id:
+        run_id:
           type: string
           description: CI run identifier.
           example: actions/runs/9876543210
-        run-url:
+        run_url:
           type: string
           description: CI run URL.
           example: https://github.com/acme/widget-api/actions/runs/9876543210
-        predicate-type:
+        predicate_type:
           type: string
           description: Provenance predicate type.
           example: SLSA Provenance v1
@@ -268,7 +269,7 @@ main:
           type: string
           description: Rekor transparency-log reference.
           example: https://rekor.sigstore.dev (index 148820391)
-        verify-cmd:
+        verify_cmd:
           type: string
           description: Copy-paste cosign verify command (multi-line allowed).
           example: cosign verify --certificate-identity-regexp ... harbor.example.mil/acme/widget-api@sha256:...
@@ -286,18 +287,18 @@ main:
         example: Runs as non-root (UID 65532, no setuid binaries)
 
     # ---- §7 As-of stamp ----------------------------------------------------
-    as-of:
+    as_of:
       type: object
       description: Point-in-time scan metadata (§7). A scan without a date is worthless.
       ui:
         group: "§7 As-of"
         order: 1
       properties:
-        scan-date:
+        scan_date:
           type: string
           description: Date the scan was taken (YYYY-MM-DD).
           example: "2026-06-28"
-        harbor-version:
+        harbor_version:
           type: string
           description: Harbor version that produced the scan.
           example: Harbor v2.11.1
@@ -305,11 +306,11 @@ main:
           type: string
           description: Scanner name.
           example: Trivy
-        trivy-version:
+        trivy_version:
           type: string
           description: Scanner version.
           example: 0.52.0
-        trivy-db:
+        trivy_db:
           type: string
           description: Vulnerability DB version / timestamp.
           example: ver 2, updated 2026-06-28 06:14 UTC

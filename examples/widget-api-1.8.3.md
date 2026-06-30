@@ -3,8 +3,8 @@ $quill: container_security_report@1.0.0
 $kind: main
 product: acme/widget-api
 registry: harbor.example.mil
-report-id: SR-2026-0042
-prepared-by:
+report_id: SR-2026-0042
+prepared_by:
   name: J. Rivera
   role: Product Security Lead, ACME Platform
   email: security@acme.example
@@ -21,7 +21,7 @@ variants:
     digest: "sha256:a1b2c3d4e5f6079889aabbccddeeff00112233445566778899aabbccddeeff00"
 
 # §2 Harbor scan summary + Crit/High table
-scan-summary:
+scan_summary:
   critical: 0
   high: 2
   medium: 4
@@ -46,14 +46,14 @@ vex:
     variant: full
     status: not_affected
     justification: vulnerable_code_not_in_execute_path
-    remediation-date: "2026-07-31"
+    remediation_date: "2026-07-31"
 
 # §4 SBOM
 sbom:
   format: CycloneDX
-  spec-version: 1.6 JSON
+  spec_version: 1.6 JSON
   components: 214 components (118 OS pkgs, 96 application)
-  attached-as: in-toto attestation (predicate cyclonedx)
+  attached_as: in-toto attestation (predicate cyclonedx)
   digest: "sha256:9988776655443322110099887766554433221100998877665544332211009988"
 
 # §5 Provenance + signature
@@ -61,15 +61,15 @@ provenance:
   builder: GitHub Actions (hosted runner, OIDC)
   workflow: .github/workflows/release.yml@refs/tags/v1.8.3
   repo: acme/widget-api
-  repo-url: https://github.com/acme/widget-api
+  repo_url: https://github.com/acme/widget-api
   commit: c0ffee1
-  run-id: actions/runs/9876543210
-  run-url: https://github.com/acme/widget-api/actions/runs/9876543210
-  predicate-type: SLSA Provenance v1
+  run_id: actions/runs/9876543210
+  run_url: https://github.com/acme/widget-api/actions/runs/9876543210
+  predicate_type: SLSA Provenance v1
 signature:
   identity: GitHub OIDC, repo=acme/widget-api
   rekor: https://rekor.sigstore.dev (index 148820391)
-  verify-cmd: |-
+  verify_cmd: |-
     cosign verify \
       --certificate-identity-regexp '^https://github.com/acme/widget-api' \
       --certificate-oidc-issuer https://token.actions.githubusercontent.com \
@@ -85,10 +85,10 @@ hardening:
   - No secrets or build tooling in final layers
 
 # §7 As-of stamp
-as-of:
-  scan-date: "2026-06-28"
-  harbor-version: Harbor v2.11.1
+as_of:
+  scan_date: "2026-06-28"
+  harbor_version: Harbor v2.11.1
   scanner: Trivy
-  trivy-version: "0.52.0"
-  trivy-db: ver 2, updated 2026-06-28 06:14 UTC
+  trivy_version: "0.52.0"
+  trivy_db: ver 2, updated 2026-06-28 06:14 UTC
 ~~~
