@@ -189,7 +189,7 @@
   )
   v(s2)
   table(
-    columns: (2.9cm, 1.6cm, 1fr, 2.6cm),
+    columns: (3.3cm, 2cm, 1fr, 2.6cm),
     align: left + horizon,
     table.header[CVE][Severity][Component \@ Version][Fixed Version],
     ..data.cves.map(c => (
@@ -202,15 +202,18 @@
   )
   v(s1)
   text(size: 8.5pt, fill: muted)[
-    Critical and High only; Medium and Low are in the attached scan JSON.
+    Critical and High only — the decision-driving subset. Every finding, all
+    severities, is enumerated in #strong[Appendix A].
   ]
 
   // === §3 SBOM (Harbor-generated) =========================================
   section[3.][Software Bill of Materials (SBOM)]
   let b = data.sbom
+  let pkgs = data.at("sbom_packages", default: ())
   kv[Format][#b.format (#b.spec_version)]
   kv[SBOM digest][#digest(b.digest)]
   kv[Retrieve from][#raw(b.source)]
+  kv[Components][#if pkgs.len() > 0 { [#pkgs.len() packages — enumerated in #strong[Appendix B]] } else { text(fill: muted)[inventory not available] }]
   v(s1)
   text(size: 8.5pt, fill: muted)[
     Generated server-side by Harbor and stored as an OCI accessory of the image
@@ -247,6 +250,56 @@
   text(size: 8pt, fill: muted, style: "italic")[
     Point-in-time scan; valid only for the digests in §1, as of #a.scan_date.
   ]
+
+  // === Appendix A — every finding, all severities =========================
+  // The complete vulnerability enumeration. §2 carries the Critical/High
+  // subset that drives the decision; this is the full list for the record.
+  pagebreak(weak: true)
+  let all = data.at("all_cves", default: ())
+  section[A.][Appendix A — All Findings (#all.len())]
+  if all.len() == 0 {
+    text(size: 9pt, fill: positive)[No vulnerabilities reported by the scan.]
+  } else {
+    table(
+      columns: (3.3cm, 2cm, 1fr, 2.6cm),
+      align: left + horizon,
+      table.header[CVE][Severity][Component \@ Version][Fixed Version],
+      ..all.map(c => (
+        link("https://nvd.nist.gov/vuln/detail/" + c.id,
+          text(fill: accent, c.id)),
+        sev-label(c.severity),
+        [#raw(c.component) #h(2pt) #text(fill: muted)[#c.installed]],
+        if c.fixed == "" { text(fill: muted)[—] } else { raw(c.fixed) },
+      )).flatten()
+    )
+    v(s1)
+    text(size: 8.5pt, fill: muted)[
+      Every finding Harbor returned for the digests in §1, ordered by severity.
+    ]
+  }
+
+  // === Appendix B — full SBOM component inventory =========================
+  pagebreak(weak: true)
+  section[B.][Appendix B — SBOM Components (#pkgs.len())]
+  if pkgs.len() == 0 {
+    text(size: 9pt, fill: muted)[No SBOM was available for this build; see §3.]
+  } else {
+    table(
+      columns: (1fr, 4.2cm, 1.8cm, 3.4cm),
+      align: left + horizon,
+      table.header[Package][Version][Type][License],
+      ..pkgs.map(p => (
+        raw(p.name),
+        if p.version == "" { text(fill: muted)[—] } else { raw(p.version) },
+        if p.at("type", default: "") == "" { text(fill: muted)[—] } else { text(size: 8.5pt, fill: muted)[#p.type] },
+        if p.at("license", default: "") == "" { text(fill: muted)[—] } else { text(size: 8.5pt)[#p.license] },
+      )).flatten()
+    )
+    v(s1)
+    text(size: 8.5pt, fill: muted)[
+      Full component inventory parsed from the SBOM in §3.
+    ]
+  }
 }
 
 // --- Entry point ------------------------------------------------------------

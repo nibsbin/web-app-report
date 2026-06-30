@@ -148,6 +148,39 @@ main:
             type: string
             description: Fixed version, or "" when no fix is available yet.
             example: 2.6.3-1
+    all_cves:
+      type: array
+      description: >-
+        Every finding from the Harbor scan, all severities (Appendix A). The
+        Critical/High subset above is the decision-driving view; this is the
+        complete enumeration. Empty when the scan reported no findings.
+      ui:
+        group: "Appendix A — All findings"
+        order: 1
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            description: CVE identifier (links to NVD).
+            example: CVE-2024-45491
+          severity:
+            type: string
+            description: Finding severity.
+            enum: [Critical, High, Medium, Low, Unknown]
+            example: Low
+          component:
+            type: string
+            description: Affected component / package.
+            example: libexpat
+          installed:
+            type: string
+            description: Installed version of the component.
+            example: 2.5.0-1
+          fixed:
+            type: string
+            description: Fixed version, or "" when no fix is available yet.
+            example: 2.6.3-1
 
     # ---- §3 SBOM (Harbor-generated) ----------------------------------------
     sbom:
@@ -177,6 +210,35 @@ main:
           type: string
           description: How / where the SBOM is retrievable.
           example: Harbor accessory — additions/sbom
+    sbom_packages:
+      type: array
+      description: >-
+        Full component inventory parsed from the SBOM (Appendix B). One row per
+        package. Empty when no SBOM was available for this build. Top-level
+        (not nested under sbom) because the quill engine forbids an array inside
+        an object.
+      ui:
+        group: "Appendix B — SBOM components"
+        order: 1
+      items:
+        type: object
+        properties:
+          name:
+            type: string
+            description: Package / component name.
+            example: openssl
+          version:
+            type: string
+            description: Resolved version, or "" when the SBOM omits it.
+            example: 3.0.13-1
+          type:
+            type: string
+            description: Package ecosystem from its purl (deb, npm, golang, …), or "".
+            example: deb
+          license:
+            type: string
+            description: Concluded or declared license, or "" when unstated.
+            example: Apache-2.0
 
     # ---- §4 Provenance -----------------------------------------------------
     provenance:

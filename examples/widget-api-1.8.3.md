@@ -39,12 +39,63 @@ cves:
     installed: 3.0.13-1
     fixed: 3.0.14-1
 
+# Appendix A — every finding, all severities
+all_cves:
+  - id: CVE-2024-45491
+    severity: High
+    component: libexpat
+    installed: 2.5.0-1
+    fixed: 2.6.3-1
+  - id: CVE-2024-6119
+    severity: High
+    component: openssl
+    installed: 3.0.13-1
+    fixed: 3.0.14-1
+  - id: CVE-2024-2961
+    severity: Medium
+    component: glibc
+    installed: 2.36-9
+    fixed: 2.36-9+deb12u7
+  - id: CVE-2023-31484
+    severity: Low
+    component: perl
+    installed: 5.36.0-7
+    fixed: ""
+  - id: CVE-2024-0001
+    severity: Unknown
+    component: zlib1g
+    installed: 1:1.2.13-1
+    fixed: ""
+
 # §3 SBOM — generated server-side by Harbor, recorded as a pointer
 sbom:
   format: CycloneDX
   spec_version: 1.6 JSON
   digest: "sha256:9988776655443322110099887766554433221100998877665544332211009988"
   source: Harbor accessory — additions/sbom
+
+# Appendix B — full SBOM component inventory
+sbom_packages:
+  - name: openssl
+    version: 3.0.13-1
+    type: deb
+    license: Apache-2.0
+  - name: libexpat1
+    version: 2.5.0-1
+    type: deb
+    license: MIT
+  - name: glibc
+    version: 2.36-9
+    type: deb
+    license: LGPL-2.1-or-later
+  - name: perl-base
+    version: 5.36.0-7
+    type: deb
+    license: ""
+  - name: tslib
+    version: 2.6.2
+    type: npm
+    license: MIT
 
 # §4 Build provenance — source pointer for the digest above
 provenance:
