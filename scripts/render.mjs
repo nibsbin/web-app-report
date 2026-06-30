@@ -65,11 +65,20 @@ for (const md of docs) {
     const doc = Document.fromMarkdown(readFileSync(md, "utf8"));
     const result = await engine.render(quill, doc, { format });
     for (const w of result.warnings) console.warn(`  warning [${md}]: ${w.message}`);
-    const artifact = result.artifacts[0];
-    const dest = output ?? join(outDir, `${basename(md, extname(md))}.${format}`);
-    mkdirSync(dirname(dest), { recursive: true });
-    writeFileSync(dest, artifact.bytes);
-    console.log(`rendered ${md} -> ${dest} (${artifact.bytes.length} bytes, ${result.renderTimeMs}ms)`);
+    // PNG yields one artifact per page; PDF/SVG/TXT yield a single artifact.
+    const multi = result.artifacts.length > 1;
+    const base = output
+      ? output.replace(/\.[^./]+$/, "")
+      : join(outDir, basename(md, extname(md)));
+    result.artifacts.forEach((artifact, i) => {
+      const dest = output && !multi ? output : `${base}${multi ? `-p${i + 1}` : ""}.${format}`;
+      mkdirSync(dirname(dest), { recursive: true });
+      writeFileSync(dest, artifact.bytes);
+      console.log(
+        `rendered ${md} -> ${dest} (${artifact.bytes.length} bytes` +
+          (i === 0 ? `, ${result.renderTimeMs}ms` : "") + ")",
+      );
+    });
   } catch (err) {
     failures++;
     console.error(`failed ${md}: ${err.message}`);

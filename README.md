@@ -69,6 +69,15 @@ node scripts/render.mjs -f svg examples/widget-api-1.8.3.md   # pdf | svg | png 
 it with the WASM `Engine`. CI runs the same `npm run render` on push — see
 `.github/workflows/build-report.yml`. The compiled PDF is uploaded as an artifact.
 
+### PR previews
+
+On a pull request, the `pr-preview` job rasterizes each report page to PNG
+(`node scripts/render.mjs -f png`), publishes the images to the `pr-previews`
+branch, and posts a sticky comment that embeds them inline — so a reviewer sees
+the rendered report on the PR without downloading anything. The comment is
+updated in place on every push, and links to the full PDF artifact. (Skipped on
+fork PRs, whose tokens can't push the branch or comment.)
+
 ## Authoring a new report
 
 Copy `examples/widget-api-1.8.3.md` and edit the card-yaml frontmatter. The first
