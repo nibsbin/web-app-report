@@ -1,16 +1,17 @@
 name: build-report
 
-# Compile every Typst report under reports/ to a PDF and upload as an artifact.
+# Render every Quillmark document under examples/ with the container_security_report
+# quill and upload the PDFs as artifacts.
 on:
   push:
     paths:
-      - "reports/**"
-      - "template/**"
+      - "container_security_report/**"
+      - "examples/**"
       - ".github/workflows/build-report.yml"
   pull_request:
     paths:
-      - "reports/**"
-      - "template/**"
+      - "container_security_report/**"
+      - "examples/**"
   workflow_dispatch:
 
 permissions:
@@ -22,18 +23,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Typst
-        uses: typst-community/setup-typst@v4
+      - name: Cache cargo bin
+        uses: actions/cache@v4
         with:
-          typst-version: "0.12.0"
+          path: ~/.cargo/bin
+          key: quillmark-cli-${{ runner.os }}
 
-      - name: Compile reports
+      - name: Install quillmark CLI
+        run: |
+          if ! command -v quillmark >/dev/null; then
+            cargo install quillmark-cli
+          fi
+          quillmark --version
+
+      - name: Render reports
         run: |
           shopt -s nullglob
           mkdir -p out
-          for f in reports/*.typ; do
+          for f in examples/*.md; do
             echo "::group::$f"
-            typst compile --root . "$f" "out/$(basename "${f%.typ}").pdf"
+            quillmark render ./container_security_report "$f" -o "out/$(basename "${f%.md}").pdf"
             echo "::endgroup::"
           done
           ls -la out

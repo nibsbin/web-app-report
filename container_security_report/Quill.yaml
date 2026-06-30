@@ -1,0 +1,315 @@
+quill:
+  name: container_security_report
+  backend: typst
+  version: "1.0.0"
+  description: >-
+    Container image security report, keyed to one immutable digest set. Records
+    Harbor vulnerability findings, VEX assertions, SBOM, build provenance,
+    signature, and hardening facts for a single image build. Purely
+    informational — it states facts, it is not an authorization to operate.
+  plate_file: plate.typ
+
+# The report is fully data-driven: there is no free-form prose body, every
+# section is rendered from the structured fields below.
+main:
+  body:
+    enabled: false
+
+  fields:
+    # ---- Identity ----------------------------------------------------------
+    product:
+      type: string
+      description: Registry repository path of the image (without registry host).
+      example: acme/widget-api
+      ui:
+        group: Identity
+        order: 1
+    registry:
+      type: string
+      description: Registry host the image lives in.
+      example: harbor.example.mil
+      ui:
+        group: Identity
+        order: 2
+    report-id:
+      type: string
+      description: Human-facing identifier for this report.
+      example: SR-2026-0042
+      ui:
+        group: Identity
+        order: 3
+    prepared-by:
+      type: object
+      description: Author of record for the report (§7 contact line).
+      ui:
+        group: Identity
+        order: 4
+      properties:
+        name:
+          type: string
+          description: Preparer name.
+          example: J. Rivera
+        role:
+          type: string
+          description: Preparer role / title.
+          example: Product Security Lead, ACME Platform
+        email:
+          type: string
+          description: Preparer contact email.
+          example: security@acme.example
+
+    # ---- §1 Variants -------------------------------------------------------
+    variants:
+      type: array
+      description: >-
+        One row per image variant under review. Each variant carries its own
+        immutable SHA256 digest — the digest is the binding artifact identity.
+      ui:
+        group: "§1 Images covered"
+        order: 1
+      items:
+        type: object
+        properties:
+          name:
+            type: string
+            description: Variant name (e.g. full, airmark).
+            example: full
+          tag:
+            type: string
+            description: Mutable tag, listed for convenience only.
+            example: 1.8.3
+          size:
+            type: string
+            description: Human-readable image size.
+            example: 82 MB
+          digest:
+            type: string
+            description: Immutable sha256 digest of the variant.
+            example: "sha256:3f1d9c0a8b7e6f5d4c3b2a1908f7e6d5c4b3a29180f7e6d5c4b3a29180f7e6d5"
+
+    # ---- §2 Scan -----------------------------------------------------------
+    scan-summary:
+      type: object
+      description: Harbor severity counts for the badge strip (§2).
+      ui:
+        group: "§2 Vulnerability scan"
+        order: 1
+      properties:
+        critical:
+          type: integer
+          description: Number of Critical findings.
+          example: 0
+        high:
+          type: integer
+          description: Number of High findings.
+          example: 2
+        medium:
+          type: integer
+          description: Number of Medium findings.
+          example: 4
+        low:
+          type: integer
+          description: Number of Low findings.
+          example: 9
+        unknown:
+          type: integer
+          description: Number of Unknown-severity findings.
+          example: 1
+    cves:
+      type: array
+      description: >-
+        Every Critical/High finding from the Harbor scan (Medium/Low live in the
+        attached scan JSON).
+      ui:
+        group: "§2 Vulnerability scan"
+        order: 2
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            description: CVE identifier (links to NVD).
+            example: CVE-2024-45491
+          severity:
+            type: string
+            description: Finding severity.
+            enum: [Critical, High, Medium, Low, Unknown]
+            example: High
+          component:
+            type: string
+            description: Affected component / package.
+            example: libexpat
+          installed:
+            type: string
+            description: Installed version of the component.
+            example: 2.5.0-1
+          fixed:
+            type: string
+            description: Fixed version, or "" when no fix is available yet.
+            example: 2.6.3-1
+
+    # ---- §3 VEX ------------------------------------------------------------
+    vex:
+      type: array
+      description: >-
+        One assertion per UNFIXED Critical/High finding. Either not_affected
+        with an OpenVEX justification, or affected/under_investigation with a
+        remediation-date. An empty list renders the green "nothing for the
+        POA&M" note.
+      ui:
+        group: "§3 VEX"
+        order: 1
+      items:
+        type: object
+        properties:
+          cve:
+            type: string
+            description: CVE this assertion is about.
+            example: CVE-2024-45491
+          variant:
+            type: string
+            description: Variant the assertion applies to.
+            example: full
+          status:
+            type: string
+            description: OpenVEX status.
+            enum: [not_affected, affected, under_investigation, fixed]
+            example: not_affected
+          justification:
+            type: string
+            description: OpenVEX justification (required when status is not_affected).
+            example: vulnerable_code_not_in_execute_path
+          remediation-date:
+            type: string
+            description: Target remediation date, or "" if not applicable.
+            example: "2026-07-31"
+
+    # ---- §4 SBOM -----------------------------------------------------------
+    sbom:
+      type: object
+      description: Software Bill of Materials metadata (§4).
+      ui:
+        group: "§4 SBOM"
+        order: 1
+      properties:
+        format:
+          type: string
+          description: SBOM format.
+          example: CycloneDX
+        spec-version:
+          type: string
+          description: SBOM spec version / encoding.
+          example: 1.6 JSON
+        components:
+          type: string
+          description: Component count summary.
+          example: 214 components (118 OS pkgs, 96 application)
+        attached-as:
+          type: string
+          description: How the SBOM is attached / retrievable.
+          example: in-toto attestation (predicate cyclonedx)
+        digest:
+          type: string
+          description: sha256 digest of the SBOM document.
+          example: "sha256:9988776655443322110099887766554433221100998877665544332211009988"
+
+    # ---- §5 Provenance + signature ----------------------------------------
+    provenance:
+      type: object
+      description: Build provenance attestation details (§5).
+      ui:
+        group: "§5 Provenance & signature"
+        order: 1
+      properties:
+        builder:
+          type: string
+          description: Build platform / runner.
+          example: GitHub Actions (hosted runner, OIDC)
+        workflow:
+          type: string
+          description: Workflow reference that produced the build.
+          example: .github/workflows/release.yml@refs/tags/v1.8.3
+        repo:
+          type: string
+          description: Source repository (org/name).
+          example: acme/widget-api
+        repo-url:
+          type: string
+          description: Source repository URL.
+          example: https://github.com/acme/widget-api
+        commit:
+          type: string
+          description: Source commit the build was cut from.
+          example: c0ffee1
+        run-id:
+          type: string
+          description: CI run identifier.
+          example: actions/runs/9876543210
+        run-url:
+          type: string
+          description: CI run URL.
+          example: https://github.com/acme/widget-api/actions/runs/9876543210
+        predicate-type:
+          type: string
+          description: Provenance predicate type.
+          example: SLSA Provenance v1
+    signature:
+      type: object
+      description: Cosign signature / transparency-log details (§5).
+      ui:
+        group: "§5 Provenance & signature"
+        order: 2
+      properties:
+        identity:
+          type: string
+          description: Keyless signing identity.
+          example: GitHub OIDC, repo=acme/widget-api
+        rekor:
+          type: string
+          description: Rekor transparency-log reference.
+          example: https://rekor.sigstore.dev (index 148820391)
+        verify-cmd:
+          type: string
+          description: Copy-paste cosign verify command (multi-line allowed).
+          example: cosign verify --certificate-identity-regexp ... harbor.example.mil/acme/widget-api@sha256:...
+
+    # ---- §6 Hardening ------------------------------------------------------
+    hardening:
+      type: array
+      description: One checkmark per image-hardening fact (§6).
+      ui:
+        group: "§6 Hardening"
+        order: 1
+      items:
+        type: string
+        description: A single hardening statement.
+        example: Runs as non-root (UID 65532, no setuid binaries)
+
+    # ---- §7 As-of stamp ----------------------------------------------------
+    as-of:
+      type: object
+      description: Point-in-time scan metadata (§7). A scan without a date is worthless.
+      ui:
+        group: "§7 As-of"
+        order: 1
+      properties:
+        scan-date:
+          type: string
+          description: Date the scan was taken (YYYY-MM-DD).
+          example: "2026-06-28"
+        harbor-version:
+          type: string
+          description: Harbor version that produced the scan.
+          example: Harbor v2.11.1
+        scanner:
+          type: string
+          description: Scanner name.
+          example: Trivy
+        trivy-version:
+          type: string
+          description: Scanner version.
+          example: 0.52.0
+        trivy-db:
+          type: string
+          description: Vulnerability DB version / timestamp.
+          example: ver 2, updated 2026-06-28 06:14 UTC

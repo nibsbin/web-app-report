@@ -1,10 +1,13 @@
 // =============================================================================
-// Container Image Security Report — reusable Typst template
+// Container Image Security Report — Quillmark plate (Typst backend)
 // -----------------------------------------------------------------------------
-// One report == one immutable digest set. Instantiate by importing this file and
-// calling `security-report(..)` with a data dictionary. See `reports/` for a
-// worked example, and `README.md` for the field contract.
+// One report == one immutable digest set. The document data arrives from the
+// Quillmark helper package as the `data` dictionary (populated from the
+// markdown card-yaml frontmatter — see Quill.yaml for the field contract). This
+// plate renders that data; it does not generate facts.
 // =============================================================================
+
+#import "@local/quillmark-helper:0.1.0": data
 
 // --- Palette ----------------------------------------------------------------
 // Restrained on purpose. Structure is navy; meaning is carried by exactly two
@@ -303,3 +306,7 @@
     Point-in-time scan; valid only for the digests in §1, as of #a.scan-date.
   ]
 }
+
+// --- Entry point ------------------------------------------------------------
+// Render the document data supplied by the Quillmark Typst backend.
+#show: _ => security-report(data)
