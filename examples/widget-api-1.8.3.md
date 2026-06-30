@@ -39,31 +39,13 @@ cves:
     installed: 3.0.13-1
     fixed: 3.0.14-1
 
-# §3 VEX for each UNFIXED Crit/High
-# (Only CVE-2024-45491 is unfixed; the openssl one was patched in this build.)
-vex:
-  - cve: CVE-2024-45491
-    variant: full
-    status: not_affected
-    justification: vulnerable_code_not_in_execute_path
-    remediation_date: "2026-07-31"
-
-# §4 Build provenance — source pointer for the digest above
+# §3 Build provenance — source pointer for the digest above
 provenance:
   repo_url: https://github.com/acme/widget-api
   commit: c0ffee1
   run_url: https://github.com/acme/widget-api/actions/runs/9876543210
 
-# §5 Hardening facts
-hardening:
-  - Runs as non-root (UID 65532, no setuid binaries)
-  - No shell and no package manager in the image
-  - Chainguard (Wolfi) distroless base, daily-rebuilt
-  - Read-only root filesystem compatible
-  - Minimal attack surface — airmark variant is 31 MB
-  - No secrets or build tooling in final layers
-
-# §6 As-of stamp
+# §4 As-of stamp
 as_of:
   scan_date: "2026-06-28"
   harbor_version: Harbor v2.11.1
