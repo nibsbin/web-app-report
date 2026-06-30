@@ -6,6 +6,10 @@ informational: it records facts about an image, it is not an approval or
 authorization to operate. **One report == one immutable digest set.** Rebuild the
 image, you get a new digest, you issue a new report.
 
+Every section is captured directly from the build/scan pipeline — there are no
+hand-authored sections, so a report can be generated end-to-end from the
+release CI and the Harbor scan (Harbor generates the SBOM itself, server-side).
+
 This template is packaged as a [Quillmark](https://quillmark.dev) **quill** with
 the **Typst** backend. The report is data-driven: a reusable quill
 (`container_security_report/`) plus a small per-image Markdown document that
@@ -18,15 +22,13 @@ acme/widget-api  →  examples/widget-api-1.8.3.md  →  widget-api-1.8.3.pdf
 
 ## What's in the report (keyed to one digest)
 
-| § | Section | What the ISSO does with it |
-|---|---------|----------------------------|
-| 1 | **Images covered** — image name + immutable SHA256 digest, per variant (full + airmark) | Confirms the exact artifact under review |
-| 2 | **Harbor vulnerability scan** — Critical/High counts + full Crit/High CVE table (CVE, severity, component, fixed version) | The headline artifact — the gate decision |
-| 3 | **VEX** — for each *unfixed* Crit/High: not-affected (with justification) or remediation-with-date | Copies these rows straight into the POA&M |
-| 4 | **SBOM** — CycloneDX/SPDX, attached | Answers "is log4j / openssl X in here?" |
-| 5 | **Provenance + signature** — GitHub Actions build, cosign signature verifiable in Harbor | Proves the scanned image is the one you built |
-| 6 | **Image hardening** — non-root, no shell/pkg-manager, Chainguard base | Three checkmarks, not a STIG |
-| 7 | **As-of stamp** — Harbor + Trivy DB version + scan date | A scan without a date is worthless |
+| § | Section | What the ISSO does with it | Captured from |
+|---|---------|----------------------------|---------------|
+| 1 | **Images covered** — image name + immutable SHA256 digest, per variant | Confirms the exact artifact under review | Harbor / build digest |
+| 2 | **Harbor vulnerability scan** — Critical/High counts + full Crit/High CVE table (CVE, severity, component, fixed version) | The headline artifact — the gate decision | Harbor / Trivy API |
+| 3 | **SBOM** — CycloneDX format + SBOM accessory digest, retrievable from Harbor | Answers "is log4j / openssl X in here?" | Harbor SBOM accessory |
+| 4 | **Build provenance** — source repo, commit, and CI run that produced the digest | Traces the scanned image back to its build | Release CI context |
+| 5 | **As-of stamp** — Harbor + Trivy DB version + scan date | A scan without a date is worthless | Harbor scan metadata |
 
 ## Quill layout
 
@@ -35,7 +37,6 @@ container_security_report/          the quill bundle
 ├── Quill.yaml                       manifest: backend + field schema (the data contract)
 └── plate.typ                        the reusable Typst layout (the "cookie cutter")
 examples/widget-api-1.8.3.md         a worked document with realistic data
-attachments/                         example SBOM the report points at (§4)
 scripts/render.mjs                   renderer — drives @quillmark/wasm
 package.json                         Node project: the @quillmark/wasm dependency
 .github/workflows/build-report.yml   CI: render examples/ to PDF artifacts
@@ -46,7 +47,7 @@ package.json                         Node project: the @quillmark/wasm dependenc
   authoritative contract for what a document must supply. Field keys are
   **snake_case** (a Quillmark validation requirement).
 - **`plate.typ`** imports the document data from the Quillmark helper
-  (`#import "@local/quillmark-helper:0.1.0": data`) and renders all seven
+  (`#import "@local/quillmark-helper:0.1.0": data`) and renders all five
   sections from it. The report has no free-form prose body
   (`main.body.enabled: false`); every section is rendered from structured fields.
 
@@ -89,31 +90,25 @@ for types and examples):
 product           "acme/widget-api"                  registry repo path
 registry          "harbor.example.mil"
 report_id         "SR-2026-0042"
-prepared_by       {name, role, email}
+prepared_by       {name, role, email}                author-of-record contact line
 
 variants[]        {name, tag, size, digest}          §1 — one row per variant; digest is binding
 scan_summary      {critical, high, medium, low, unknown}   §2 — counts for the badges
 cves[]            {id, severity, component, installed,     §2 — every Crit/High finding
                    fixed}                                  fixed: "" if no fix yet
-vex[]             {cve, variant, status, justification,    §3 — one per UNFIXED Crit/High
-                   remediation_date}                       status ∈ openvex vocab
-sbom              {format, spec_version, components,        §4
-                   attached_as, digest}
-provenance        {builder, workflow, repo, repo_url,       §5
-                   commit, run_id, run_url, predicate_type}
-signature         {identity, rekor, verify_cmd}             §5
-hardening[]       ["Runs as non-root …", …]                 §6 — one checkmark each
-as_of             {scan_date, harbor_version, scanner,       §7
+sbom              {format, spec_version, digest, source}   §3 — Harbor SBOM accessory pointer
+provenance        {repo_url, commit, run_url}              §4 — build-source pointer
+as_of             {scan_date, harbor_version, scanner,       §5
                    trivy_version, trivy_db}
 ```
 
 Notes:
-- **`vex`** holds only the Crit/High findings *without an applied fix*. Use
-  `status: not_affected` with an OpenVEX `justification`
-  (e.g. `vulnerable_code_not_in_execute_path`) **or** `status: affected` /
-  `under_investigation` with a `remediation_date`. If `vex` is empty the report
-  prints a green "nothing for the POA&M" note.
-- The summary strip reports the Critical+High and unfixed counts as plain facts;
-  the report makes no approve/deny judgement.
-- Keep the document's `cves`/`vex` consistent with the actual Harbor export —
-  this quill renders facts, it does not generate them.
+- **`sbom`** is a pointer, not an inventory — Harbor (>= 2.11) generates the
+  CycloneDX SBOM server-side and stores it as an OCI accessory of the image; the
+  report records its `digest` and where to fetch it (`additions/sbom`).
+- **`provenance`** is traceability only — the source repo, commit, and CI run
+  that produced the digest in §1. All three are known to the release pipeline.
+- The summary strip reports the Critical+High count as a plain fact; the report
+  makes no approve/deny judgement.
+- Keep the document's `cves` consistent with the actual Harbor export — this
+  quill renders facts, it does not generate them.

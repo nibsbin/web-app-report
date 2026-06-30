@@ -4,9 +4,9 @@ quill:
   version: "1.0.0"
   description: >-
     Container image security report, keyed to one immutable digest set. Records
-    Harbor vulnerability findings, VEX assertions, SBOM, build provenance,
-    signature, and hardening facts for a single image build. Purely
-    informational — it states facts, it is not an authorization to operate.
+    Harbor vulnerability findings, a Harbor-generated SBOM, and build provenance
+    for a single image build. Purely informational — it states facts, it is not
+    an authorization to operate.
   plate_file: plate.typ
 
 # The report is fully data-driven: there is no free-form prose body, every
@@ -41,7 +41,7 @@ main:
         order: 3
     prepared_by:
       type: object
-      description: Author of record for the report (§7 contact line).
+      description: Author of record for the report (§5 contact line).
       ui:
         group: Identity
         order: 4
@@ -149,91 +149,45 @@ main:
             description: Fixed version, or "" when no fix is available yet.
             example: 2.6.3-1
 
-    # ---- §3 VEX ------------------------------------------------------------
-    vex:
-      type: array
-      description: >-
-        One assertion per UNFIXED Critical/High finding. Either not_affected
-        with an OpenVEX justification, or affected/under_investigation with a
-        remediation_date. An empty list renders the green "nothing for the
-        POA&M" note.
-      ui:
-        group: "§3 VEX"
-        order: 1
-      items:
-        type: object
-        properties:
-          cve:
-            type: string
-            description: CVE this assertion is about.
-            example: CVE-2024-45491
-          variant:
-            type: string
-            description: Variant the assertion applies to.
-            example: full
-          status:
-            type: string
-            description: OpenVEX status.
-            enum: [not_affected, affected, under_investigation, fixed]
-            example: not_affected
-          justification:
-            type: string
-            description: OpenVEX justification (required when status is not_affected).
-            example: vulnerable_code_not_in_execute_path
-          remediation_date:
-            type: string
-            description: Target remediation date, or "" if not applicable.
-            example: "2026-07-31"
-
-    # ---- §4 SBOM -----------------------------------------------------------
+    # ---- §3 SBOM (Harbor-generated) ----------------------------------------
     sbom:
       type: object
-      description: Software Bill of Materials metadata (§4).
+      description: >-
+        Pointer to the SBOM Harbor generated server-side (§3). Harbor (>= 2.11)
+        produces the CycloneDX SBOM with its own scanner and stores it as an OCI
+        accessory of the image — this records the format and the accessory
+        digest, not a hand-counted inventory.
       ui:
-        group: "§4 SBOM"
+        group: "§3 SBOM"
         order: 1
       properties:
         format:
           type: string
-          description: SBOM format.
+          description: SBOM format Harbor emits.
           example: CycloneDX
         spec_version:
           type: string
           description: SBOM spec version / encoding.
           example: 1.6 JSON
-        components:
-          type: string
-          description: Component count summary.
-          example: 214 components (118 OS pkgs, 96 application)
-        attached_as:
-          type: string
-          description: How the SBOM is attached / retrievable.
-          example: in-toto attestation (predicate cyclonedx)
         digest:
           type: string
-          description: sha256 digest of the SBOM document.
+          description: sha256 digest of the SBOM accessory in Harbor.
           example: "sha256:9988776655443322110099887766554433221100998877665544332211009988"
+        source:
+          type: string
+          description: How / where the SBOM is retrievable.
+          example: Harbor accessory — additions/sbom
 
-    # ---- §5 Provenance + signature ----------------------------------------
+    # ---- §4 Provenance -----------------------------------------------------
     provenance:
       type: object
-      description: Build provenance attestation details (§5).
+      description: >-
+        Build-source pointer for the digest in §1 (§4). Traceability only —
+        source repo, commit, and CI run, all known to the release pipeline.
       ui:
-        group: "§5 Provenance & signature"
+        group: "§4 Provenance"
         order: 1
       properties:
-        builder:
-          type: string
-          description: Build platform / runner.
-          example: GitHub Actions (hosted runner, OIDC)
-        workflow:
-          type: string
-          description: Workflow reference that produced the build.
-          example: .github/workflows/release.yml@refs/tags/v1.8.3
-        repo:
-          type: string
-          description: Source repository (org/name).
-          example: acme/widget-api
         repo_url:
           type: string
           description: Source repository URL.
@@ -242,56 +196,17 @@ main:
           type: string
           description: Source commit the build was cut from.
           example: c0ffee1
-        run_id:
-          type: string
-          description: CI run identifier.
-          example: actions/runs/9876543210
         run_url:
           type: string
-          description: CI run URL.
+          description: CI run URL that produced the build.
           example: https://github.com/acme/widget-api/actions/runs/9876543210
-        predicate_type:
-          type: string
-          description: Provenance predicate type.
-          example: SLSA Provenance v1
-    signature:
-      type: object
-      description: Cosign signature / transparency-log details (§5).
-      ui:
-        group: "§5 Provenance & signature"
-        order: 2
-      properties:
-        identity:
-          type: string
-          description: Keyless signing identity.
-          example: GitHub OIDC, repo=acme/widget-api
-        rekor:
-          type: string
-          description: Rekor transparency-log reference.
-          example: https://rekor.sigstore.dev (index 148820391)
-        verify_cmd:
-          type: string
-          description: Copy-paste cosign verify command (multi-line allowed).
-          example: cosign verify --certificate-identity-regexp ... harbor.example.mil/acme/widget-api@sha256:...
 
-    # ---- §6 Hardening ------------------------------------------------------
-    hardening:
-      type: array
-      description: One checkmark per image-hardening fact (§6).
-      ui:
-        group: "§6 Hardening"
-        order: 1
-      items:
-        type: string
-        description: A single hardening statement.
-        example: Runs as non-root (UID 65532, no setuid binaries)
-
-    # ---- §7 As-of stamp ----------------------------------------------------
+    # ---- §5 As-of stamp ----------------------------------------------------
     as_of:
       type: object
-      description: Point-in-time scan metadata (§7). A scan without a date is worthless.
+      description: Point-in-time scan metadata (§5). A scan without a date is worthless.
       ui:
-        group: "§7 As-of"
+        group: "§5 As-of"
         order: 1
       properties:
         scan_date:

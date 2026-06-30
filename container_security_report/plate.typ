@@ -12,8 +12,8 @@
 
 // --- Palette ----------------------------------------------------------------
 // Restrained on purpose. Structure is navy; meaning is carried by exactly two
-// semantic colors — danger (Critical/High, affected, no-fix) and positive
-// (not-affected, satisfied checks). Everything else is ink or muted gray.
+// semantic colors — danger (Critical/High, no-fix) and positive (clean scan).
+// Everything else is ink or muted gray.
 #let ink       = rgb("#1f2328")
 #let muted     = rgb("#5b6470")
 #let hairline  = rgb("#dfe3e8")
@@ -39,11 +39,6 @@
 // --- Type-level labels (no containers — aligned, letter-spaced caps) ---------
 #let tag(label, color) = text(fill: color, weight: "bold", size: 8pt, tracking: 0.5pt, upper(label))
 #let sev-label(level) = tag(level, sev-color(level))
-#let status-label(status) = {
-  let c = if status == "not_affected" or status == "fixed" { positive }
-          else if status == "affected" { danger } else { muted }
-  tag(status.replace("_", " "), c)
-}
 
 // One panel language for every grouped callout: hairline outline only — no fill,
 // barely-there radius. Quiet structure, not a coloured card.
@@ -156,9 +151,6 @@
   panel({
     text(weight: "bold", fill: if blocking == 0 { ink } else { danger })[#blocking]
     text(size: 9pt, fill: muted)[ Critical / High]
-    text(size: 9pt, fill: muted)[ #h(s2) · #h(s2) ]
-    text(weight: "bold", fill: if data.vex.len() == 0 { ink } else { danger })[#data.vex.len()]
-    text(size: 9pt, fill: muted)[ unfixed]
     text(size: 9pt, fill: muted)[ #h(s2) · #h(s2) Scanned #data.as_of.scan_date]
   })
 
@@ -210,85 +202,35 @@
   )
   v(s1)
   text(size: 8.5pt, fill: muted)[
-    Critical and High only; Medium and Low are in the attached scan JSON (§7).
+    Critical and High only; Medium and Low are in the attached scan JSON.
   ]
 
-  // === §3 Vendor statement + VEX ==========================================
-  section[3.][VEX — Unfixed Critical / High]
-  [
-    One assertion per unfixed Critical/High — not-affected with justification, or
-    a remediation date. POA&M-ready; statuses follow OpenVEX.
-  ]
-  v(s1)
-  if data.vex.len() == 0 {
-    panel(text(fill: positive, weight: "bold")[
-      ✓ No unfixed Critical/High findings. Nothing to carry into a POA&M.
-    ])
-  } else {
-    for vx in data.vex {
-      block(below: s2, panel({
-        grid(columns: (1fr, auto), column-gutter: 10pt, align: horizon,
-          link("https://nvd.nist.gov/vuln/detail/" + vx.cve,
-            text(weight: "bold", fill: accent, size: 11pt, vx.cve)),
-          {
-            status-label(vx.status)
-            h(8pt)
-            text(size: 8.5pt, fill: muted)[#vx.variant]
-          },
-        )
-        v(s1)
-        if vx.status == "not_affected" {
-          kv[Justification][#vx.justification]
-        }
-        if vx.at("remediation_date", default: "") != "" {
-          kv[Remediation by][#text(weight: "bold")[#vx.remediation_date]]
-        }
-      }))
-    }
-  }
-
-  // === §4 SBOM =============================================================
-  section[4.][Software Bill of Materials (SBOM)]
+  // === §3 SBOM (Harbor-generated) =========================================
+  section[3.][Software Bill of Materials (SBOM)]
   let b = data.sbom
   kv[Format][#b.format (#b.spec_version)]
-  kv[Components inventoried][#b.components]
-  kv[Attached as][#raw(b.attached_as)]
   kv[SBOM digest][#digest(b.digest)]
+  kv[Retrieve from][#raw(b.source)]
   v(s1)
   text(size: 8.5pt, fill: muted)[
-    Answers component-presence questions (e.g. log4j, openssl) without
-    re-scanning. Attached as an in-toto attestation, retrievable from the registry.
+    Generated server-side by Harbor and stored as an OCI accessory of the image
+    in §1. Answers component-presence questions (e.g. log4j, openssl) without
+    re-scanning.
   ]
 
-  // === §5 Provenance + signature ==========================================
-  section[5.][Build Provenance & Signature]
+  // === §4 Build provenance ================================================
+  section[4.][Build Provenance]
   let p = data.provenance
-  kv[Built by][#p.builder]
-  kv[Workflow][#raw(p.workflow)]
-  kv[Source][#link(p.repo_url, raw(p.repo)) \@ #raw(p.commit)]
-  kv[Run][#link(p.run_url)[#raw(p.run_id)] · #p.predicate_type]
-  let sg = data.signature
-  kv[Signed with][cosign (keyless / #sg.identity)]
-  kv[Transparency log][#raw(sg.rekor)]
+  kv[Source][#link(p.repo_url)[#raw(p.repo_url)] \@ #raw(p.commit)]
+  kv[CI run][#link(p.run_url)[#raw(p.run_url)]]
   v(s1)
-  panel(text(font: "DejaVu Sans Mono", size: 8pt, fill: ink)[#sg.verify_cmd])
-  v(2pt)
   text(size: 8.5pt, fill: muted)[
-    Verify against the digest in §1 to confirm the scanned image is the one built here.
+    The build that produced the digest in §1 — traceable to its source commit
+    and CI run.
   ]
 
-  // === §6 Hardening ========================================================
-  section[6.][Image Hardening]
-  grid(columns: (1fr, 1fr), column-gutter: s3, row-gutter: 5pt,
-    ..data.hardening.map(hf => box({
-      text(fill: positive, weight: "bold")[✓]
-      h(6pt)
-      text(hf)
-    }))
-  )
-
-  // === §7 As-of stamp ======================================================
-  section[7.][Scan Metadata — As Of]
+  // === §5 As-of stamp ======================================================
+  section[5.][Scan Metadata — As Of]
   let a = data.as_of
   grid(columns: (1fr, 1fr), column-gutter: s4,
     {
