@@ -49,7 +49,6 @@ sbom:
 # §4 Build provenance — source pointer for the digest above
 provenance:
   repo_url: https://github.com/acme/widget-api
-  commit: c0ffee1
   run_url: https://github.com/acme/widget-api/actions/runs/9876543210
 
 # §5 As-of stamp
